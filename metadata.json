@@ -1,0 +1,6 @@
+{
+  "name": "Việt Phục Remix",
+  "description": "Nền tảng sáng tạo & phối trang phục truyền thống Việt Nam kết hợp phong cách Gen Z hiện đại, tích hợp tra cứu văn hóa, kiểm tra hòa sắc Ngũ Hành và AI Stylist.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
