@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { CommunityLookbook, OutfitState, ClothingItem } from '../types';
 import { communityService } from '../services/communityService';
 import { 
@@ -12,24 +12,36 @@ import {
   Send,
   X,
   Compass,
-  Check
+  Check,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface CommunityShowcaseProps {
   onApplyOutfit: (outfit: OutfitState) => void;
   onOpenSubmitModal: () => void;
+  theme?: 'dark' | 'light';
 }
 
 export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
   onApplyOutfit,
   onOpenSubmitModal,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
   const [looks, setLooks] = useState<CommunityLookbook[]>(() => communityService.getCommunityLookbooks());
   const [filterStyle, setFilterStyle] = useState<'all' | 'traditional' | 'remix' | 'experimental'>('all');
   const [sortBy, setSortBy] = useState<'popular' | 'newest' | 'harmony'>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectingLook, setInspectingLook] = useState<CommunityLookbook | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const styleScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollStyle = (direction: 'left' | 'right') => {
+    if (styleScrollRef.current) {
+      styleScrollRef.current.scrollBy({ left: direction === 'left' ? -180 : 180, behavior: 'smooth' });
+    }
+  };
 
   const handleLike = (lookId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,18 +79,34 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
   return (
     <div className="w-full max-w-7xl mx-auto py-6 px-4 sm:px-6 space-y-6">
       {/* Top Banner & Submit CTA */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 bg-gradient-to-r from-[#1c1c24] via-[#1a171d] to-[#251717] rounded-3xl border border-white/10 shadow-xl">
+      <div
+        className={`flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-6 rounded-3xl border shadow-xl transition-colors ${
+          isLight
+            ? 'bg-gradient-to-r from-[#fbf9f4] via-[#f7f3ec] to-[#fdeeed] border-[#e7e1d5] text-[#1f1c19]'
+            : 'bg-gradient-to-r from-[#1c1c24] via-[#1a171d] to-[#251717] border-white/10 text-white'
+        }`}
+      >
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2.5 py-0.5 bg-[#c93b2b]/20 text-[#ff6b5b] border border-[#c93b2b]/30 rounded-full font-medium">
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
+              isLight
+                ? 'bg-[#c93b2b]/10 text-[#c93b2b] border-[#c93b2b]/25'
+                : 'bg-[#c93b2b]/20 text-[#ff6b5b] border-[#c93b2b]/30'
+            }`}>
               Cộng Đồng Việt Phục Gen Z
             </span>
-            <span className="text-xs text-zinc-400">· {looks.length} tác phẩm đã đăng</span>
+            <span className={`text-xs ${isLight ? 'text-[#6b6357]' : 'text-zinc-400'}`}>
+              · {looks.length} tác phẩm đã đăng
+            </span>
           </div>
-          <h2 className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h2 className={`font-serif text-2xl sm:text-3xl font-bold tracking-tight ${
+            isLight ? 'text-[#1f1c19]' : 'text-white'
+          }`}>
             Sàn Diễn Lookbook Cộng Đồng
           </h2>
-          <p className="text-xs sm:text-sm text-zinc-300 max-w-2xl leading-relaxed">
+          <p className={`text-xs sm:text-sm max-w-2xl leading-relaxed ${
+            isLight ? 'text-[#6b6357]' : 'text-zinc-300'
+          }`}>
             Khám phá những bản phối Việt Phục độc bản từ các bạn trẻ trên toàn quốc. Thả tim, học hỏi kinh nghiệm phối màu và bấm "Mặc Ngay" để thử trực tiếp lên Avatar của bạn!
           </p>
         </div>
@@ -92,28 +120,63 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
         </button>
       </div>
 
-      {/* Filter & Sort Controls */}
+      {/* Filter & Sort Controls with Navigation */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
-        {/* Style Segmented Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-white/5 rounded-xl border border-white/10 text-xs">
-          {[
-            { id: 'all', label: 'Tất Cả' },
-            { id: 'traditional', label: 'Cổ Phong Thuần Khiết' },
-            { id: 'remix', label: 'Remix Đường Phố' },
-            { id: 'experimental', label: 'Vị Lai & Avant-Garde' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterStyle(tab.id as any)}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer whitespace-nowrap ${
-                filterStyle === tab.id
-                  ? 'bg-[#c93b2b] text-white shadow-sm'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Style Segmented Tabs with Navigation Controls */}
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => handleScrollStyle('left')}
+            className={`sm:hidden p-1.5 rounded-lg border cursor-pointer ${
+              isLight
+                ? 'bg-stone-100 border-[#ded6c5] text-stone-700'
+                : 'border-white/10 bg-white/5 text-zinc-300 hover:text-white'
+            }`}
+            title="Cuộn sang trái"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <div
+            ref={styleScrollRef}
+            className={`flex items-center gap-1 p-1 rounded-xl border text-xs overflow-x-auto scrollbar-thin scroll-smooth ${
+              isLight
+                ? 'bg-white border-[#e7e1d5] shadow-xs'
+                : 'bg-white/5 border-white/10'
+            }`}
+          >
+            {[
+              { id: 'all', label: 'Tất Cả' },
+              { id: 'traditional', label: 'Cổ Phong Thuần Khiết' },
+              { id: 'remix', label: 'Remix Đường Phố' },
+              { id: 'experimental', label: 'Vị Lai & Avant-Garde' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setFilterStyle(tab.id as any)}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer whitespace-nowrap ${
+                  filterStyle === tab.id
+                    ? 'bg-[#c93b2b] text-white shadow-sm'
+                    : isLight
+                    ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => handleScrollStyle('right')}
+            className={`sm:hidden p-1.5 rounded-lg border cursor-pointer ${
+              isLight
+                ? 'bg-stone-100 border-[#ded6c5] text-stone-700'
+                : 'border-white/10 bg-white/5 text-zinc-300 hover:text-white'
+            }`}
+            title="Cuộn sang phải"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* Sort & Search */}
@@ -123,13 +186,21 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
             placeholder="Tìm theo tên tác phẩm, tác giả, #hashtag..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 sm:w-64 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-[#c93b2b]"
+            className={`flex-1 sm:w-64 px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:border-[#c93b2b] transition-colors ${
+              isLight
+                ? 'bg-white border-[#ded6c5] text-stone-900 placeholder:text-stone-400'
+                : 'bg-white/5 border-white/10 text-white placeholder:text-zinc-500'
+            }`}
           />
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-1.5 bg-[#202026] border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-[#c93b2b] cursor-pointer"
+            className={`px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:border-[#c93b2b] cursor-pointer transition-colors ${
+              isLight
+                ? 'bg-white border-[#ded6c5] text-stone-900'
+                : 'bg-[#202026] border-white/10 text-white'
+            }`}
           >
             <option value="popular">Yêu thích nhất</option>
             <option value="harmony">Điểm hòa sắc cao</option>
@@ -155,21 +226,37 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
             <div
               key={look.id}
               onClick={() => setInspectingLook(look)}
-              className="group bg-[#16161b] hover:bg-[#1a1a20] rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden shadow-lg hover:shadow-2xl flex flex-col cursor-pointer"
+              className={`group rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm hover:shadow-xl flex flex-col cursor-pointer ${
+                isLight
+                  ? 'bg-white hover:bg-stone-50/80 border-[#e7e1d5] hover:border-stone-300'
+                  : 'bg-[#16161b] hover:bg-[#1a1a20] border-white/10 hover:border-white/20'
+              }`}
             >
               {/* Card Header & Author */}
-              <div className="p-4 flex items-center justify-between gap-3 border-b border-white/5 bg-[#141418]">
+              <div
+                className={`p-4 flex items-center justify-between gap-3 border-b transition-colors ${
+                  isLight ? 'bg-[#f7f4ed] border-[#e7e1d5]' : 'bg-[#141418] border-white/5'
+                }`}
+              >
                 <div className="flex items-center gap-2.5">
                   <img
                     src={look.authorAvatar}
                     alt={look.authorName}
-                    className="w-8 h-8 rounded-full border border-white/20 object-cover"
+                    className="w-8 h-8 rounded-full border border-stone-300 dark:border-white/20 object-cover"
                   />
                   <div>
-                    <h4 className="text-xs font-semibold text-white group-hover:text-[#ff7566] transition-colors">
+                    <h4
+                      className={`text-xs font-semibold transition-colors ${
+                        isLight
+                          ? 'text-[#1f1c19] group-hover:text-[#c93b2b]'
+                          : 'text-white group-hover:text-[#ff7566]'
+                      }`}
+                    >
                       {look.authorName}
                     </h4>
-                    <p className="text-[10px] text-zinc-400">{look.authorTitle}</p>
+                    <p className={`text-[10px] ${isLight ? 'text-[#8a7f70]' : 'text-zinc-400'}`}>
+                      {look.authorTitle}
+                    </p>
                   </div>
                 </div>
 
@@ -178,11 +265,15 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
                     onClick={(e) => handleLike(look.id, e)}
                     className={`p-1.5 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
                       isLiked
-                        ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                        ? isLight
+                          ? 'bg-rose-50 text-rose-600 border-rose-300'
+                          : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                        : isLight
+                        ? 'bg-white text-stone-600 hover:text-stone-900 border-[#ded6c5]'
                         : 'bg-white/5 text-zinc-400 hover:text-white border-white/10'
                     }`}
                   >
-                    <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-rose-400 text-rose-400' : ''}`} />
+                    <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-rose-500 text-rose-500' : ''}`} />
                     <span className="font-mono text-[11px] tabular-nums">{look.likes}</span>
                   </button>
                 </div>
@@ -192,19 +283,37 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
               <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[10px] px-2 py-0.5 bg-white/5 text-zinc-300 rounded font-medium truncate max-w-[200px]">
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-medium truncate max-w-[200px] border ${
+                        isLight
+                          ? 'bg-[#f7f4ed] border-[#e7e1d5] text-[#6b6357]'
+                          : 'bg-white/5 border-white/5 text-zinc-300'
+                      }`}
+                    >
                       {look.eventName}
                     </span>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 tabular-nums">
+                    <span
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded border tabular-nums ${
+                        isLight
+                          ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      }`}
+                    >
                       Hòa sắc {look.colorHarmonyScore}/100
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-base font-bold text-white group-hover:text-[#ff7566] transition-colors mb-1.5">
+                  <h3
+                    className={`font-serif text-base font-bold transition-colors mb-1.5 ${
+                      isLight
+                        ? 'text-[#1f1c19] group-hover:text-[#c93b2b]'
+                        : 'text-white group-hover:text-[#ff7566]'
+                    }`}
+                  >
                     {look.title}
                   </h3>
 
-                  <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-3">
+                  <p className={`text-xs line-clamp-2 leading-relaxed mb-3 ${isLight ? 'text-[#6b6357]' : 'text-zinc-400'}`}>
                     {look.notes}
                   </p>
                 </div>
@@ -215,7 +324,11 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
                     {look.items.map((it, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] px-2 py-0.5 bg-white/5 text-zinc-300 rounded border border-white/5 whitespace-nowrap"
+                        className={`text-[10px] px-2 py-0.5 rounded border whitespace-nowrap ${
+                          isLight
+                            ? 'bg-[#f7f4ed] border-[#e7e1d5] text-[#2b2520]'
+                            : 'bg-white/5 border-white/5 text-zinc-300'
+                        }`}
                       >
                         {it.name}
                       </span>
@@ -225,7 +338,7 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
                   {/* Hashtags */}
                   <div className="flex items-center gap-1 flex-wrap">
                     {look.tags.map((tag, i) => (
-                      <span key={i} className="text-[10px] text-zinc-500">
+                      <span key={i} className={`text-[10px] ${isLight ? 'text-[#8a7f70]' : 'text-zinc-500'}`}>
                         {tag}
                       </span>
                     ))}
@@ -234,8 +347,14 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
               </div>
 
               {/* Card Footer Actions */}
-              <div className="p-3 border-t border-white/5 bg-[#141418] flex items-center justify-between gap-2 text-xs">
-                <span className="text-[10px] text-zinc-500">{look.createdAt}</span>
+              <div
+                className={`p-3 border-t flex items-center justify-between gap-2 text-xs transition-colors ${
+                  isLight ? 'bg-[#f7f4ed] border-[#e7e1d5]' : 'bg-[#141418] border-white/5'
+                }`}
+              >
+                <span className={`text-[10px] ${isLight ? 'text-[#8a7f70]' : 'text-zinc-500'}`}>
+                  {look.createdAt}
+                </span>
 
                 <button
                   onClick={(e) => {
@@ -244,7 +363,11 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
                     setToastMessage(`Đã mặc "${look.title}" lên Avatar! 👘`);
                     setTimeout(() => setToastMessage(null), 2000);
                   }}
-                  className="px-3 py-1.5 bg-[#c93b2b]/15 hover:bg-[#c93b2b] text-[#ff7566] hover:text-white border border-[#c93b2b]/30 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+                    isLight
+                      ? 'bg-[#c93b2b]/10 hover:bg-[#c93b2b] text-[#c93b2b] hover:text-white border-[#c93b2b]/30'
+                      : 'bg-[#c93b2b]/15 hover:bg-[#c93b2b] text-[#ff7566] hover:text-white border-[#c93b2b]/30'
+                  }`}
                 >
                   <span>Mặc Thử Ngay</span>
                   <ArrowRight className="w-3 h-3" />
@@ -257,9 +380,26 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
 
       {/* Inspect Community Look Modal */}
       {inspectingLook && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-          <div className="relative w-full max-w-2xl bg-[#16161b] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-5 border-b border-white/10 bg-[#1c1c22] flex items-start justify-between">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setInspectingLook(null);
+          }}
+          className={`fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-fadeIn transition-colors ${
+            isLight ? 'bg-stone-900/35' : 'bg-black/75'
+          }`}
+        >
+          <div
+            className={`relative w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors ${
+              isLight
+                ? 'bg-white border-[#e7e1d5] text-[#1f1c19]'
+                : 'bg-[#16161b] border-white/10 text-white'
+            }`}
+          >
+            <div
+              className={`p-5 border-b flex items-start justify-between transition-colors ${
+                isLight ? 'bg-[#f7f4ed] border-[#e7e1d5]' : 'bg-[#1c1c22] border-white/10'
+              }`}
+            >
               <div className="flex items-center gap-3">
                 <img
                   src={inspectingLook.authorAvatar}
@@ -267,10 +407,10 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
                   className="w-10 h-10 rounded-full border-2 border-[#c93b2b] object-cover"
                 />
                 <div>
-                  <h3 className="font-serif text-lg font-bold text-white">
+                  <h3 className={`font-serif text-lg font-bold ${isLight ? 'text-[#1f1c19]' : 'text-white'}`}>
                     {inspectingLook.title}
                   </h3>
-                  <p className="text-xs text-zinc-400">
+                  <p className={`text-xs ${isLight ? 'text-[#6b6357]' : 'text-zinc-400'}`}>
                     Bởi {inspectingLook.authorName} ({inspectingLook.authorTitle}) · {inspectingLook.createdAt}
                   </p>
                 </div>
@@ -278,40 +418,70 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
 
               <button
                 onClick={() => setInspectingLook(null)}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                  isLight
+                    ? 'text-stone-500 hover:text-stone-900 hover:bg-stone-200/60'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-zinc-300 leading-relaxed scrollbar-thin">
-              <div className="p-4 bg-white/5 rounded-xl border border-white/5 space-y-1">
-                <div className="flex items-center justify-between text-xs text-zinc-400">
+            <div className={`p-5 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm leading-relaxed scrollbar-thin ${
+              isLight ? 'text-[#2b2520]' : 'text-zinc-300'
+            }`}>
+              <div
+                className={`p-4 rounded-xl border space-y-1 ${
+                  isLight
+                    ? 'bg-[#fbf9f4] border-[#e7e1d5]'
+                    : 'bg-white/5 border-white/5'
+                }`}
+              >
+                <div className={`flex items-center justify-between text-xs ${isLight ? 'text-[#6b6357]' : 'text-zinc-400'}`}>
                   <span>Sự kiện: {inspectingLook.eventName}</span>
-                  <span className="text-emerald-400 font-semibold">Điểm hòa sắc: {inspectingLook.colorHarmonyScore}/100</span>
+                  <span className={isLight ? 'text-emerald-700 font-semibold' : 'text-emerald-400 font-semibold'}>
+                    Điểm hòa sắc: {inspectingLook.colorHarmonyScore}/100
+                  </span>
                 </div>
-                <p className="text-zinc-200 italic pt-1">{inspectingLook.notes}</p>
+                <p className={`italic pt-1 ${isLight ? 'text-[#1f1c19]' : 'text-zinc-200'}`}>
+                  {inspectingLook.notes}
+                </p>
               </div>
 
               {/* Items Breakdown */}
               <div>
-                <h4 className="font-semibold text-white text-xs mb-2 uppercase tracking-wider text-zinc-400">
+                <h4 className={`font-semibold text-xs mb-2 uppercase tracking-wider ${isLight ? 'text-[#6b6357]' : 'text-zinc-400'}`}>
                   Chi Tiết Từng Món Trang Phục Phối Đồ:
                 </h4>
                 <div className="space-y-2">
                   {inspectingLook.items.map((it, idx) => (
                     <div
                       key={idx}
-                      className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between gap-3"
+                      className={`p-3 rounded-xl border flex items-center justify-between gap-3 ${
+                        isLight
+                          ? 'bg-[#f7f4ed] border-[#e7e1d5]'
+                          : 'bg-white/5 border-white/5'
+                      }`}
                     >
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-white text-xs sm:text-sm">{it.name}</span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300">
+                          <span className={`font-semibold text-xs sm:text-sm ${isLight ? 'text-[#1f1c19]' : 'text-white'}`}>
+                            {it.name}
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded border ${
+                              isLight
+                                ? 'bg-white border-[#ded6c5] text-stone-700'
+                                : 'bg-white/10 border-white/5 text-zinc-300'
+                            }`}
+                          >
                             {it.era}
                           </span>
                         </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5 line-clamp-1">{it.description}</p>
+                        <p className={`text-[11px] mt-0.5 line-clamp-1 ${isLight ? 'text-[#6b6357]' : 'text-zinc-400'}`}>
+                          {it.description}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -323,7 +493,11 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
                 {inspectingLook.tags.map((t, idx) => (
                   <span
                     key={idx}
-                    className="text-xs px-2.5 py-1 bg-white/5 text-zinc-300 rounded-lg border border-white/5 font-mono"
+                    className={`text-xs px-2.5 py-1 rounded-lg border font-mono ${
+                      isLight
+                        ? 'bg-white border-[#ded6c5] text-[#6b6357]'
+                        : 'bg-white/5 border-white/5 text-zinc-300'
+                    }`}
                   >
                     {t}
                   </span>
@@ -332,16 +506,24 @@ export const CommunityShowcase: React.FC<CommunityShowcaseProps> = ({
             </div>
 
             {/* Modal Actions */}
-            <div className="p-4 border-t border-white/10 bg-[#141418] flex items-center justify-between gap-3">
+            <div
+              className={`p-4 border-t flex items-center justify-between gap-3 transition-colors ${
+                isLight ? 'bg-[#f7f4ed] border-[#e7e1d5]' : 'bg-[#141418] border-white/10'
+              }`}
+            >
               <button
                 onClick={(e) => handleLike(inspectingLook.id, e)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
                   inspectingLook.likedByCurrentUser
-                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                    ? isLight
+                      ? 'bg-rose-50 text-rose-600 border-rose-300'
+                      : 'bg-rose-500/20 text-rose-400 border-rose-500/40'
+                    : isLight
+                    ? 'bg-white text-stone-700 hover:text-stone-900 border-[#ded6c5]'
                     : 'bg-white/5 text-zinc-300 hover:text-white border-white/10'
                 }`}
               >
-                <Heart className={`w-4 h-4 ${inspectingLook.likedByCurrentUser ? 'fill-rose-400' : ''}`} />
+                <Heart className={`w-4 h-4 ${inspectingLook.likedByCurrentUser ? 'fill-rose-500 text-rose-500' : ''}`} />
                 <span>{inspectingLook.likes} Lượt thích</span>
               </button>
 

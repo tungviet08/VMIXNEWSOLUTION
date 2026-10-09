@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OutfitState, ClothingItem, EventModel, LookbookEntry, ColorHarmonyResult, CommunityLookbook } from '../types';
 import { userService } from '../services/userService';
 import { communityService } from '../services/communityService';
 import { 
   X, 
   Bookmark, 
-  Share2, 
-  Download, 
   Send, 
   Check, 
-  Sparkles, 
   Copy,
-  Calendar,
-  Compass
+  Calendar
 } from 'lucide-react';
 
 interface LookbookModalProps {
@@ -23,6 +19,7 @@ interface LookbookModalProps {
   currentEvent: EventModel;
   harmony: ColorHarmonyResult;
   onLookbookSaved: () => void;
+  theme?: 'dark' | 'light';
 }
 
 export const LookbookModal: React.FC<LookbookModalProps> = ({
@@ -33,6 +30,7 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
   currentEvent,
   harmony,
   onLookbookSaved,
+  theme = 'dark',
 }) => {
   const [title, setTitle] = useState(`${currentEvent.name} - Vibe 2026`);
   const [notes, setNotes] = useState('');
@@ -41,6 +39,18 @@ export const LookbookModal: React.FC<LookbookModalProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isSubmittedToCommunity, setIsSubmittedToCommunity] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const isLight = theme === 'light';
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -124,43 +134,66 @@ ${equippedItems.map(it => `  • ${it.name} (${it.era})`).join('\n')}
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-xl bg-[#16161b] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className={`relative w-full max-w-xl rounded-2xl border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors ${
+          isLight ? 'bg-white border-stone-200 text-stone-900' : 'bg-[#16161b] border-white/10 text-zinc-300'
+        }`}
+      >
         {/* Header */}
-        <div className="p-5 border-b border-white/10 bg-[#1c1c22] flex items-center justify-between">
+        <div
+          className={`p-5 border-b flex items-center justify-between ${
+            isLight ? 'bg-stone-50 border-stone-200' : 'bg-[#1c1c22] border-white/10'
+          }`}
+        >
           <div className="flex items-center gap-2">
             <Bookmark className="w-5 h-5 text-[#c93b2b]" />
-            <h3 className="font-serif text-lg font-bold text-white">
+            <h3 className={`font-serif text-lg font-bold ${isLight ? 'text-stone-900' : 'text-white'}`}>
               Lưu & Chia Sẻ Việt Phục Lookbook
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-400 hover:text-white hover:bg-white/10'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm text-zinc-300 scrollbar-thin">
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm scrollbar-thin">
           {/* Live Look Summary Card Preview */}
-          <div className="p-4 bg-gradient-to-br from-[#1d1d26] to-[#16161c] rounded-2xl border border-white/10 shadow-inner space-y-2">
+          <div
+            className={`p-4 rounded-2xl border shadow-xs space-y-2 ${
+              isLight
+                ? 'bg-[#fbf9f4] border-[#e8e2d5]'
+                : 'bg-gradient-to-br from-[#1d1d26] to-[#16161c] border-white/10'
+            }`}
+          >
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#ff7566] font-semibold flex items-center gap-1.5">
+              <span className="text-[#c93b2b] font-semibold flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{currentEvent.name}</span>
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold tabular-nums">
+              <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold tabular-nums">
                 Hòa sắc {harmony.score}/100
               </span>
             </div>
 
             <div className="pt-1">
-              <h4 className="font-serif text-base font-bold text-white">
+              <h4 className={`font-serif text-base font-bold ${isLight ? 'text-stone-900' : 'text-white'}`}>
                 {title || 'Tên Lookbook'}
               </h4>
-              <p className="text-[11px] text-zinc-400 mt-0.5">{currentEvent.weather.label}</p>
+              <p className={`text-[11px] mt-0.5 ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>{currentEvent.weather.label}</p>
             </div>
 
             {/* Items summary */}
@@ -168,7 +201,9 @@ ${equippedItems.map(it => `  • ${it.name} (${it.era})`).join('\n')}
               {equippedItems.map((it, idx) => (
                 <span
                   key={idx}
-                  className="text-[11px] px-2 py-0.5 bg-white/5 border border-white/10 rounded-md text-zinc-300"
+                  className={`text-[11px] px-2 py-0.5 border rounded-md ${
+                    isLight ? 'bg-white border-stone-200 text-stone-700' : 'bg-white/5 border-white/10 text-zinc-300'
+                  }`}
                 >
                   {it.name}
                 </span>
@@ -179,34 +214,40 @@ ${equippedItems.map(it => `  • ${it.name} (${it.era})`).join('\n')}
           {/* Form inputs */}
           <form onSubmit={handleSaveLookbook} className="space-y-3">
             <div>
-              <label className="block text-zinc-400 mb-1 font-medium">Tiêu đề Lookbook</label>
+              <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Tiêu đề Lookbook</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                className={`w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                  isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-white/5 border-white/10 text-white'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block text-zinc-400 mb-1 font-medium">Ghi chú & Cảm hứng styling</label>
+              <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Ghi chú & Cảm hứng styling</label>
               <textarea
                 rows={2}
                 placeholder="Chia sẻ lý do bạn chọn phối chiếc áo ngũ thân này cùng đôi chunky loafer..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b] resize-none"
+                className={`w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] resize-none ${
+                  isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-white/5 border-white/10 text-white'
+                }`}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Phong cách phân loại</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Phong cách phân loại</label>
                 <select
                   value={styleCategory}
                   onChange={(e) => setStyleCategory(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-[#202026] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                  className={`w-full px-3 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                    isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-[#202026] border-white/10 text-white'
+                  }`}
                 >
                   <option value="traditional">Cổ Phong Thuần Khiết</option>
                   <option value="remix">Remix Đường Phố</option>
@@ -215,13 +256,15 @@ ${equippedItems.map(it => `  • ${it.name} (${it.era})`).join('\n')}
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Hashtags cộng đồng</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Hashtags cộng đồng</label>
                 <input
                   type="text"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   placeholder="#ViệtPhụcRemix #ÁoDài..."
-                  className="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                  className={`w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                    isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-white/5 border-white/10 text-white'
+                  }`}
                 />
               </div>
             </div>
@@ -231,9 +274,11 @@ ${equippedItems.map(it => `  • ${it.name} (${it.era})`).join('\n')}
               <button
                 type="button"
                 onClick={handleCopyFormattedCard}
-                className="px-3 py-2 bg-white/5 hover:bg-white/10 text-zinc-300 rounded-xl text-xs font-medium border border-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                className={`px-3 py-2 rounded-xl text-xs font-medium border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  isLight ? 'bg-stone-100 hover:bg-stone-200 text-stone-700 border-stone-200' : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10'
+                }`}
               >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedLink ? 'Đã sao chép vào bộ nhớ!' : 'Sao Chép Text Lookbook'}</span>
               </button>
 
@@ -241,14 +286,16 @@ ${equippedItems.map(it => `  • ${it.name} (${it.era})`).join('\n')}
                 <button
                   type="button"
                   onClick={handleSubmitToCommunity}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer border ${
                     isSubmittedToCommunity
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-white/10 hover:bg-white/15 text-white border border-white/15'
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : isLight
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300'
+                      : 'bg-white/10 hover:bg-white/15 text-white border-white/15'
                   }`}
                   title="Gửi bộ look này lên Sàn Diễn Cộng Đồng để mọi người cùng chiêm ngưỡng"
                 >
-                  {isSubmittedToCommunity ? <Check className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5 text-amber-400" />}
+                  {isSubmittedToCommunity ? <Check className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5 text-amber-500" />}
                   <span>{isSubmittedToCommunity ? 'Đã Đăng Lên Sàn Diễn!' : 'Đăng Lên Cộng Đồng'}</span>
                 </button>
 

@@ -19,6 +19,7 @@ import { ColorHarmonyCard } from './components/ColorHarmonyCard';
 import { CulturalWarningBanner } from './components/CulturalWarningBanner';
 import { EventSelector } from './components/EventSelector';
 import { WardrobeBrowser } from './components/WardrobeBrowser';
+import { LiveWardrobePicker } from './components/LiveWardrobePicker';
 import { ItemDetailModal } from './components/ItemDetailModal';
 import { CustomItemModal } from './components/CustomItemModal';
 import { LookbookModal } from './components/LookbookModal';
@@ -26,6 +27,7 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { ComparisonModal } from './components/ComparisonModal';
 import { CommunityShowcase } from './components/CommunityShowcase';
 import { AiAssistant } from './components/AiAssistant';
+import { Shirt, Palette } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'styling' | 'wardrobe' | 'community' | 'comparison'>('styling');
@@ -33,6 +35,44 @@ export default function App() {
   const [currentEvent, setCurrentEvent] = useState<EventModel>(PRESET_EVENTS[0]);
   const [avatarType, setAvatarType] = useState<'female' | 'male' | 'unisex' | 'cyber'>('female');
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
+  const [stylingPanelTab, setStylingPanelTab] = useState<'wardrobe' | 'colors'>('wardrobe');
+
+  // Theme state: 'dark' | 'light'
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const stored = localStorage.getItem('vietphuc_remix_theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch (e) {
+      console.warn('Failed to read theme from storage', e);
+    }
+    return 'dark';
+  });
+
+  const toggleTheme = () => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('vietphuc_remix_theme', next);
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    if (theme === 'light') {
+      root.classList.remove('dark');
+      root.classList.add('light');
+      body.classList.remove('bg-[#0e0e11]', 'text-[#f4f2ee]');
+      body.classList.add('bg-[#fcfaf7]', 'text-[#1c1917]');
+    } else {
+      root.classList.remove('light');
+      root.classList.add('dark');
+      body.classList.remove('bg-[#fcfaf7]', 'text-[#1c1917]');
+      body.classList.add('bg-[#0e0e11]', 'text-[#f4f2ee]');
+    }
+  }, [theme]);
 
   // User Profile
   const [currentUser, setCurrentUser] = useState<UserProfile>(() => userService.getCurrentUser());
@@ -81,7 +121,6 @@ export default function App() {
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [isLookbookModalOpen, setIsLookbookModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
 
   // Items dictionary
   const itemsMap = useMemo(() => {
@@ -221,6 +260,11 @@ export default function App() {
     setIsDetailModalOpen(true);
   };
 
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedDetailItem(null);
+  };
+
   const handleApplyOutfitActionFromAi = (payload: any) => {
     if (payload?.applyEventPresets) {
       handleApplyPresetOutfit(currentEvent);
@@ -232,14 +276,22 @@ export default function App() {
     }
   };
 
+  const isLight = theme === 'light';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#0e0e11] text-[#f4f2ee]">
+    <div
+      className={`min-h-screen flex flex-col transition-colors ${
+        isLight ? 'bg-[#fcfaf7] text-[#1c1917]' : 'bg-[#0e0e11] text-[#f4f2ee]'
+      }`}
+    >
       {/* Header Bar */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         lookbookCount={savedLookbooks.length}
+        theme={theme}
+        onToggleTheme={toggleTheme}
         onOpenAi={() => setIsAiOpen(true)}
         onOpenSaveLookbook={() => setIsLookbookModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
@@ -264,6 +316,7 @@ export default function App() {
               onSelectEvent={setCurrentEvent}
               onApplyPresetOutfit={handleApplyPresetOutfit}
               onAddCustomEvent={handleAddCustomEvent}
+              theme={theme}
             />
 
             {/* Stage Split Grid */}
@@ -280,53 +333,72 @@ export default function App() {
                   setAvatarType={setAvatarType}
                   userPhotoUrl={userPhotoUrl}
                   setUserPhotoUrl={setUserPhotoUrl}
+                  theme={theme}
                 />
               </div>
 
               {/* Right Column: Customization Controls & Analysis */}
               <div className="lg:col-span-5 space-y-4">
-                {/* Traditional Color Palette Customizer */}
-                <ColorCustomizer
-                  outfit={outfit}
-                  onColorChange={handleColorChange}
-                />
+                {/* Mode Switcher: Chọn Đồ Trực Tiếp vs Bảng Màu & Hòa Sắc Ngũ Hành */}
+                <div
+                  className={`p-1 rounded-2xl border flex items-center gap-1 transition-colors ${
+                    isLight ? 'bg-white border-[#e7e1d5] shadow-xs' : 'bg-[#18181e] border-white/10'
+                  }`}
+                >
+                  <button
+                    onClick={() => setStylingPanelTab('wardrobe')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      stylingPanelTab === 'wardrobe'
+                        ? 'bg-[#c93b2b] text-white shadow-sm'
+                        : isLight
+                        ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Shirt className="w-3.5 h-3.5" />
+                    <span>Chọn Đồ Xem Ngay</span>
+                  </button>
 
-                {/* Ngũ Hành & Visual Harmony Score Card */}
-                <ColorHarmonyCard harmony={harmony} />
-
-                {/* Quick Wardrobe Swapper Ribbon */}
-                <div className="bg-[#18181e] rounded-2xl border border-white/10 p-4 shadow-lg space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-semibold text-white">Gợi Ý Mặc Nhanh Phù Hợp:</h4>
-                    <button
-                      onClick={() => setActiveTab('wardrobe')}
-                      className="text-[11px] text-[#ff7566] hover:underline cursor-pointer"
-                    >
-                      Xem toàn bộ 56+ món →
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {wardrobe.slice(0, 4).map((it) => (
-                      <button
-                        key={it.id}
-                        onClick={() => handleEquipItem(it)}
-                        className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl text-left transition-colors cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full border border-white/20"
-                            style={{ backgroundColor: it.defaultColor }}
-                          />
-                          <span className="text-[10px] text-zinc-400 truncate">{it.era}</span>
-                        </div>
-                        <p className="text-xs font-semibold text-white group-hover:text-[#ff7566] truncate">
-                          {it.name}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => setStylingPanelTab('colors')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      stylingPanelTab === 'colors'
+                        ? 'bg-[#c93b2b] text-white shadow-sm'
+                        : isLight
+                        ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Palette className="w-3.5 h-3.5" />
+                    <span>Màu Sắc & Hòa Sắc ({harmony.score}đ)</span>
+                  </button>
                 </div>
+
+                {stylingPanelTab === 'wardrobe' ? (
+                  <LiveWardrobePicker
+                    wardrobe={wardrobe}
+                    outfit={outfit}
+                    onEquipItem={handleEquipItem}
+                    onUnequipItem={handleUnequipItem}
+                    onColorChange={handleColorChange}
+                    onViewItemDetails={handleViewItemDetails}
+                    theme={theme}
+                    harmony={harmony}
+                    onSwitchToColorTab={() => setStylingPanelTab('colors')}
+                  />
+                ) : (
+                  <div className="space-y-4 animate-fadeIn">
+                    {/* Traditional Color Palette Customizer */}
+                    <ColorCustomizer
+                      outfit={outfit}
+                      onColorChange={handleColorChange}
+                      theme={theme}
+                    />
+
+                    {/* Ngũ Hành & Visual Harmony Score Card */}
+                    <ColorHarmonyCard harmony={harmony} theme={theme} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -341,6 +413,7 @@ export default function App() {
             onUnequipItem={handleUnequipItem}
             onViewItemDetails={handleViewItemDetails}
             onOpenCustomItemModal={() => setIsCustomModalOpen(true)}
+            theme={theme}
           />
         )}
 
@@ -352,6 +425,7 @@ export default function App() {
               setActiveTab('styling');
             }}
             onOpenSubmitModal={() => setIsLookbookModalOpen(true)}
+            theme={theme}
           />
         )}
 
@@ -369,6 +443,7 @@ export default function App() {
                 setActiveTab('styling');
               }}
               onSaveAsLookB={() => setLookB({ ...outfit })}
+              theme={theme}
             />
           </div>
         )}
@@ -376,10 +451,12 @@ export default function App() {
 
       {/* Floating Cultural Item Detail Modal */}
       <ItemDetailModal
+        isOpen={isDetailModalOpen && !!selectedDetailItem}
         item={selectedDetailItem}
-        onClose={() => setIsDetailModalOpen(false)}
+        onClose={handleCloseDetailModal}
         onEquip={handleEquipItem}
         isEquipped={selectedDetailItem ? Object.values(outfit).includes(selectedDetailItem.id) : false}
+        theme={theme}
       />
 
       {/* Custom Garment Modal */}
@@ -387,6 +464,7 @@ export default function App() {
         isOpen={isCustomModalOpen}
         onClose={() => setIsCustomModalOpen(false)}
         onAddItem={handleAddCustomItem}
+        theme={theme}
       />
 
       {/* Save Lookbook & Share Modal */}
@@ -398,6 +476,7 @@ export default function App() {
         currentEvent={currentEvent}
         harmony={harmony}
         onLookbookSaved={() => setSavedLookbooks(userService.getUserLookbooks())}
+        theme={theme}
       />
 
       {/* User Profile & Account Modal */}
@@ -415,6 +494,7 @@ export default function App() {
           const updated = userService.deleteUserLookbook(id);
           setSavedLookbooks(updated);
         }}
+        theme={theme}
       />
 
       {/* Embedded / Floating AI Stylist Assistant */}
@@ -437,6 +517,7 @@ export default function App() {
           else if (tab === 'community') setActiveTab('community');
           else if (tab === 'wardrobe') setActiveTab('wardrobe');
         }}
+        theme={theme}
       />
     </div>
   );

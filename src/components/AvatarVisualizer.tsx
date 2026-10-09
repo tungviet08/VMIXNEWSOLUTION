@@ -22,6 +22,7 @@ interface AvatarVisualizerProps {
   setAvatarType: (type: 'female' | 'male' | 'unisex' | 'cyber') => void;
   userPhotoUrl: string | null;
   setUserPhotoUrl: (url: string | null) => void;
+  theme?: 'dark' | 'light';
 }
 
 export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
@@ -34,9 +35,12 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
   setAvatarType,
   userPhotoUrl,
   setUserPhotoUrl,
+  theme = 'dark',
 }) => {
   const [zoomMode, setZoomMode] = React.useState<'full' | 'close-up'>('full');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isLight = theme === 'light';
 
   const outerItem = outfit.outerId ? itemsMap[outfit.outerId] : null;
   const innerItem = outfit.innerId ? itemsMap[outfit.innerId] : null;
@@ -75,11 +79,23 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
   const skinColor = skinTones[avatarType];
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-between p-4 sm:p-6 bg-gradient-to-b from-[#18181e] to-[#121216] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+    <div
+      className={`relative w-full h-full flex flex-col items-center justify-between p-4 sm:p-5 rounded-2xl border overflow-hidden transition-colors ${
+        isLight
+          ? 'bg-gradient-to-b from-[#fbf9f4] via-[#f7f3ec] to-[#eee8db] border-[#e7e1d5] shadow-xs text-[#1f1c19]'
+          : 'bg-gradient-to-b from-[#18181e] to-[#121216] border-white/10 shadow-2xl text-white'
+      }`}
+    >
       {/* Top Stage Controls */}
       <div className="w-full flex items-center justify-between gap-2 z-20">
         {/* Avatar Preset Switcher & Photo Upload */}
-        <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-black/40 backdrop-blur-md rounded-xl border border-white/10 text-xs">
+        <div
+          className={`flex items-center gap-1 sm:gap-1.5 p-1 rounded-xl border text-xs backdrop-blur-md overflow-x-auto scrollbar-thin scroll-smooth max-w-full ${
+            isLight
+              ? 'bg-white/90 border-[#e7e1d5] shadow-xs'
+              : 'bg-black/40 border-white/10'
+          }`}
+        >
           <button
             onClick={() => {
               setAvatarType('female');
@@ -87,7 +103,9 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
             }}
             className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
               !userPhotoUrl && avatarType === 'female'
-                ? 'bg-[#c93b2b] text-white'
+                ? 'bg-[#c93b2b] text-white shadow-sm'
+                : isLight
+                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -100,7 +118,9 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
             }}
             className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
               !userPhotoUrl && avatarType === 'male'
-                ? 'bg-[#c93b2b] text-white'
+                ? 'bg-[#c93b2b] text-white shadow-sm'
+                : isLight
+                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -113,7 +133,9 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
             }}
             className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
               !userPhotoUrl && avatarType === 'cyber'
-                ? 'bg-[#c93b2b] text-white'
+                ? 'bg-[#c93b2b] text-white shadow-sm'
+                : isLight
+                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                 : 'text-zinc-400 hover:text-white'
             }`}
           >
@@ -132,6 +154,8 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
             className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
               userPhotoUrl
                 ? 'bg-[#c93b2b] text-white shadow-sm'
+                : isLight
+                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
                 : 'text-zinc-400 hover:text-white hover:bg-white/5'
             }`}
             title="Tải ảnh khuôn mặt / chân dung của bạn để thử đồ trực tiếp"
@@ -145,7 +169,11 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setZoomMode(zoomMode === 'full' ? 'close-up' : 'full')}
-            className="p-2 bg-black/40 hover:bg-black/60 rounded-xl border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isLight
+                ? 'bg-white/90 hover:bg-white border-[#e7e1d5] text-stone-700 hover:text-stone-900 shadow-xs'
+                : 'bg-black/40 hover:bg-black/60 border-white/10 text-zinc-300 hover:text-white'
+            }`}
             title={zoomMode === 'full' ? 'Xem cận cảnh thân trên' : 'Xem toàn thân'}
           >
             {zoomMode === 'full' ? (
@@ -156,14 +184,22 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
           </button>
           <button
             onClick={onRandomize}
-            className="p-2 bg-black/40 hover:bg-black/60 rounded-xl border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isLight
+                ? 'bg-white/90 hover:bg-white border-[#e7e1d5] text-stone-700 hover:text-stone-900 shadow-xs'
+                : 'bg-black/40 hover:bg-black/60 border-white/10 text-zinc-300 hover:text-white'
+            }`}
             title="Phối ngẫu nhiên phong cách Gen Z Remix"
           >
             <Shuffle className="w-4 h-4" />
           </button>
           <button
             onClick={onReset}
-            className="p-2 bg-black/40 hover:bg-black/60 rounded-xl border border-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              isLight
+                ? 'bg-white/90 hover:bg-white border-[#e7e1d5] text-stone-700 hover:text-stone-900 shadow-xs'
+                : 'bg-black/40 hover:bg-black/60 border-white/10 text-zinc-300 hover:text-white'
+            }`}
             title="Làm mới trang phục"
           >
             <RotateCcw className="w-4 h-4" />
@@ -174,15 +210,23 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
       {/* Main SVG Fashion Canvas Stage */}
       <div className="relative w-full flex-1 flex items-center justify-center my-2 select-none overflow-hidden">
         {/* Subtle decorative heritage backdrop pattern */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-5">
-          <div className="w-96 h-96 rounded-full border-[12px] border-white/30 flex items-center justify-center">
-            <div className="w-72 h-72 rounded-full border-[4px] border-dashed border-white/40" />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
+          <div className={`w-96 h-96 rounded-full border-[10px] flex items-center justify-center ${
+            isLight ? 'border-[#c93b2b]/15' : 'border-white/20'
+          }`}>
+            <div className={`w-72 h-72 rounded-full border-[3px] border-dashed ${
+              isLight ? 'border-[#c93b2b]/20' : 'border-white/25'
+            }`} />
           </div>
         </div>
 
         {/* Stage Pedestal Glow */}
-        <div className="absolute bottom-6 w-56 h-12 bg-[#c93b2b]/15 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute bottom-4 w-44 h-4 bg-white/5 rounded-full border border-white/10 pointer-events-none" />
+        <div className={`absolute bottom-6 w-56 h-12 rounded-full blur-2xl pointer-events-none ${
+          isLight ? 'bg-[#c93b2b]/10' : 'bg-[#c93b2b]/20'
+        }`} />
+        <div className={`absolute bottom-4 w-44 h-4 rounded-full border pointer-events-none ${
+          isLight ? 'bg-black/5 border-black/10' : 'bg-white/5 border-white/10'
+        }`} />
 
         {/* Dynamic SVG Garment & Avatar Layers */}
         <div
@@ -193,7 +237,7 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         >
           <svg
             viewBox="0 0 380 560"
-            className="w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)]"
+            className="w-full h-full drop-shadow-[0_15px_30px_rgba(0,0,0,0.45)]"
           >
             <defs>
               {/* Patterns for luxury silk texture */}
@@ -207,54 +251,120 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
               </pattern>
               {/* Shading gradients */}
               <linearGradient id="body-shade" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="rgba(0,0,0,0.15)" />
+                <stop offset="0%" stopColor="rgba(0,0,0,0.12)" />
                 <stop offset="50%" stopColor="rgba(255,255,255,0.05)" />
-                <stop offset="100%" stopColor="rgba(0,0,0,0.2)" />
+                <stop offset="100%" stopColor="rgba(0,0,0,0.15)" />
               </linearGradient>
             </defs>
+
+            {/* --- 0. LONG FLOWING HAIR BACK LAYER (TÓC DÀI THƯỚT THA PHÍA SAU LƯNG) --- */}
+            {avatarType === 'female' && !userPhotoUrl && (
+              <g id="female-hair-back">
+                {/* Rich cascading black silk hair falling down past the waist */}
+                <path
+                  d="M 154 85 C 130 130 118 220 120 355 C 130 375 160 375 170 330 C 174 260 176 160 178 120 Z"
+                  fill="#141316"
+                />
+                <path
+                  d="M 226 85 C 250 130 262 220 260 355 C 250 375 220 375 210 330 C 206 260 204 160 202 120 Z"
+                  fill="#141316"
+                />
+                <path
+                  d="M 156 82 C 138 130 128 220 130 365 C 148 385 232 385 250 365 C 252 220 242 130 224 82 Z"
+                  fill="#1a181c"
+                />
+                {/* Silk shine luster reflections */}
+                <path d="M 136 150 C 130 240 134 320 140 350" stroke="rgba(255,255,255,0.12)" strokeWidth="1.8" fill="none" />
+                <path d="M 244 150 C 250 240 246 320 240 350" stroke="rgba(255,255,255,0.12)" strokeWidth="1.8" fill="none" />
+              </g>
+            )}
 
             {/* --- 1. BASE MANNEQUIN BODY --- */}
             <g id="mannequin-body">
               {/* Legs */}
-              <path d="M 160 340 L 155 490 L 172 490 L 180 340 Z" fill={skinColor} />
-              <path d="M 200 340 L 208 490 L 225 490 L 220 340 Z" fill={skinColor} />
+              <path d="M 162 340 L 158 485 L 174 485 L 178 340 Z" fill={skinColor} />
+              <path d="M 202 340 L 206 485 L 222 485 L 218 340 Z" fill={skinColor} />
 
-              {/* Torso & Neck */}
-              <path d="M 150 145 Q 190 155 230 145 L 225 350 L 155 350 Z" fill={skinColor} />
-              <path d="M 175 110 L 175 148 L 205 148 L 205 110 Z" fill={skinColor} />
+              {/* Torso & Graceful Tapered Neck */}
+              <path d="M 154 145 Q 190 152 226 145 L 222 345 L 158 345 Z" fill={skinColor} />
+              <path d="M 180 114 L 178 148 L 202 148 L 200 114 Z" fill={skinColor} />
 
-              {/* Arms */}
-              <path d="M 148 150 Q 120 220 128 310 L 142 310 Q 138 230 162 165 Z" fill={skinColor} />
-              <path d="M 232 150 Q 260 220 252 310 L 238 310 Q 242 230 218 165 Z" fill={skinColor} />
+              {/* Arms & Slender Hands at Hips */}
+              <path d="M 152 148 Q 126 215 132 300 L 144 298 Q 138 225 162 165 Z" fill={skinColor} />
+              <path d="M 228 148 Q 254 215 248 300 L 236 298 Q 242 225 218 165 Z" fill={skinColor} />
+              {/* Natural Hands */}
+              <path d="M 128 300 C 126 314 132 322 138 318 C 142 314 144 308 144 300 Z" fill={skinColor} />
+              <path d="M 252 300 C 254 314 248 322 242 318 C 238 314 236 308 236 300 Z" fill={skinColor} />
 
               {/* Head / Face */}
               {!userPhotoUrl ? (
                 <g id="mannequin-head">
-                  <ellipse cx="190" cy="95" rx="30" ry="38" fill={skinColor} />
-                  {/* Hair Style */}
+                  {/* Clean Oval Face Canvas */}
+                  <ellipse cx="190" cy="95" rx="27" ry="35" fill={skinColor} />
+
+                  {/* NỮ CỔ PHONG: TÓC DÀI QUÝ PHÁI, THƯỚT THA, TUYỆT ĐỐI KHÔNG CHE MẶT */}
                   {avatarType === 'female' && (
-                    <path
-                      d="M 158 95 C 158 55 222 55 222 95 C 225 130 210 145 210 145 C 210 145 205 110 190 110 C 175 110 170 145 170 145 C 170 145 158 130 158 95 Z"
-                      fill="#1a1818"
-                    />
+                    <g id="female-front-hair">
+                      {/* Vòm tóc mượt mà trên đỉnh đầu y: 52-68 */}
+                      <ellipse cx="190" cy="62" rx="26" ry="12" fill="#141316" />
+                      
+                      {/* Trâm hoa cài tóc mạ vàng đính ngọc thanh tao góc trái */}
+                      <line x1="162" y1="58" x2="182" y2="52" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="162" cy="58" r="3.2" fill="#c93b2b" />
+                      <circle cx="164" cy="57" r="1.5" fill="#fef08a" />
+
+                      {/* Đường chân tóc vòm cao phía trên trán (y <= 72) - TUYỆT ĐỐI KHÔNG CHE TRÁN, MẮT, MŨI, MIỆNG */}
+                      <path
+                        d="M 163 84 C 164 68 178 71 190 71 C 202 71 216 68 217 84 C 224 74 220 58 190 56 C 160 58 156 74 163 84 Z"
+                        fill="#141316"
+                      />
+                      {/* Chân tóc hai bên thái dương vòng ra ngoài vành tai */}
+                      <path d="M 163 84 C 158 98 160 116 164 126 C 163 112 161 98 166 85 Z" fill="#141316" />
+                      <path d="M 217 84 C 222 98 220 116 216 126 C 217 112 219 98 214 85 Z" fill="#141316" />
+                    </g>
                   )}
+
                   {avatarType === 'male' && (
-                    <path
-                      d="M 158 90 C 158 60 222 60 222 90 C 220 80 200 70 190 70 C 180 70 160 80 158 90 Z"
-                      fill="#1a1818"
-                    />
+                    <g id="male-hair">
+                      <ellipse cx="190" cy="66" rx="26" ry="14" fill="#151417" />
+                      <path
+                        d="M 162 88 C 162 66 178 72 190 72 C 202 72 218 66 218 88 C 220 74 216 64 190 62 C 164 64 160 74 162 88 Z"
+                        fill="#151417"
+                      />
+                    </g>
                   )}
+
                   {avatarType === 'cyber' && (
-                    <path
-                      d="M 155 85 C 155 50 225 50 225 85 L 230 110 L 220 100 L 160 100 L 150 110 Z"
-                      fill="#2b2d35"
-                    />
+                    <g id="cyber-hair">
+                      <path
+                        d="M 160 85 C 160 55 220 55 220 85 L 226 102 L 216 92 L 164 92 L 154 102 Z"
+                        fill="#2b2d35"
+                      />
+                      <line x1="165" y1="75" x2="215" y2="75" stroke="#00f2fe" strokeWidth="1.5" />
+                    </g>
                   )}
-                  {/* Subtle facial contours */}
-                  <path d="M 188 92 L 192 98 L 187 101" stroke="rgba(0,0,0,0.18)" strokeWidth="1.5" fill="none" />
-                  <ellipse cx="180" cy="88" rx="2" ry="1.5" fill="rgba(0,0,0,0.4)" />
-                  <ellipse cx="200" cy="88" rx="2" ry="1.5" fill="rgba(0,0,0,0.4)" />
-                  <path d="M 183 112 Q 190 116 197 112" stroke="#b04343" strokeWidth="2" fill="none" strokeLinecap="round" />
+
+                  {/* Delicate Beautiful Facial Features - 100% CLEAR AND UNOBSTRUCTED */}
+                  {/* Arched Eyebrows */}
+                  <path d="M 173 82 Q 180 79 187 82" stroke="#2c2422" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+                  <path d="M 193 82 Q 200 79 207 82" stroke="#2c2422" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+
+                  {/* Expressive Almond Eyes with Catchlights */}
+                  <ellipse cx="180" cy="88" rx="3.4" ry="2.2" fill="#181616" />
+                  <circle cx="181.2" cy="87.3" r="0.9" fill="#ffffff" />
+                  <ellipse cx="200" cy="88" rx="3.4" ry="2.2" fill="#181616" />
+                  <circle cx="201.2" cy="87.3" r="0.9" fill="#ffffff" />
+
+                  {/* Soft Rosy Cheeks */}
+                  <ellipse cx="174" cy="98" rx="4.5" ry="2.8" fill="#e88585" opacity="0.32" />
+                  <ellipse cx="206" cy="98" rx="4.5" ry="2.8" fill="#e88585" opacity="0.32" />
+
+                  {/* Subtle Nose Contours */}
+                  <path d="M 190 89 L 192 97 L 188 99" stroke="rgba(0,0,0,0.18)" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+
+                  {/* Graceful Crimson Lips (Môi Son Tự Nhiên) */}
+                  <path d="M 183 112 Q 190 109 197 112 Q 190 117 183 112 Z" fill="#c93b2b" />
+                  <path d="M 185 112 Q 190 113 195 112" stroke="#7e1717" strokeWidth="0.8" fill="none" />
                 </g>
               ) : null}
             </g>
@@ -597,6 +707,35 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
               </g>
             )}
 
+            {/* --- 6.5 FLOWING LONG HAIR OVER SHOULDERS (TÓC DÀI THƯỚT THA XÕA QUA VAI - KHÔNG CHE MẶT) --- */}
+            {avatarType === 'female' && !userPhotoUrl && (
+              <g id="female-flowing-front-hair" className="pointer-events-none">
+                {/* Lọn tóc dài óng ả buông lơi bờ vai trái (x: 146 - 162) */}
+                <path
+                  d="M 162 105 C 150 135 146 175 147 240 C 148 265 155 272 158 260 C 161 240 162 175 165 130 Z"
+                  fill="#151417"
+                />
+                <path
+                  d="M 152 140 C 149 180 150 230 153 255"
+                  stroke="rgba(255,255,255,0.18)"
+                  strokeWidth="1.2"
+                  fill="none"
+                />
+
+                {/* Lọn tóc dài óng ả buông lơi bờ vai phải (x: 218 - 234) */}
+                <path
+                  d="M 218 105 C 230 135 234 175 233 240 C 232 265 225 272 222 260 C 219 240 218 175 215 130 Z"
+                  fill="#151417"
+                />
+                <path
+                  d="M 228 140 C 231 180 230 230 227 255"
+                  stroke="rgba(255,255,255,0.18)"
+                  strokeWidth="1.2"
+                  fill="none"
+                />
+              </g>
+            )}
+
             {/* --- 7. ACCESSORIES (JEWELRY, FANS, JADE) --- */}
             {accessoryItem && (
               <g id="layer-accessories">
@@ -690,17 +829,17 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
       </div>
 
       {/* Bottom Equipped Garment Pills & Unequip Actions */}
-      <div className="w-full flex items-center justify-center gap-1.5 flex-wrap z-20 pt-2 border-t border-white/5">
+      <div className={`w-full flex items-center justify-center gap-1.5 flex-wrap z-20 pt-2 border-t ${isLight ? 'border-stone-200' : 'border-white/5'}`}>
         {outerItem && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${isLight ? 'bg-white/80 border-[#ded6c5] text-stone-800 shadow-xs' : 'bg-white/5 border-white/10 text-zinc-300'}`}>
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-xs"
               style={{ backgroundColor: outerColor }}
             />
             <span className="font-medium truncate max-w-[110px]">{outerItem.name}</span>
             <button
               onClick={() => onUnequip('outer')}
-              className="text-zinc-500 hover:text-white ml-0.5 cursor-pointer"
+              className={`${isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-500 hover:text-white'} ml-0.5 cursor-pointer`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -708,15 +847,15 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         )}
 
         {innerItem && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${isLight ? 'bg-white/80 border-[#ded6c5] text-stone-800 shadow-xs' : 'bg-white/5 border-white/10 text-zinc-300'}`}>
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-xs"
               style={{ backgroundColor: innerColor }}
             />
             <span className="font-medium truncate max-w-[100px]">{innerItem.name}</span>
             <button
               onClick={() => onUnequip('inner')}
-              className="text-zinc-500 hover:text-white ml-0.5 cursor-pointer"
+              className={`${isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-500 hover:text-white'} ml-0.5 cursor-pointer`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -724,15 +863,15 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         )}
 
         {bottomItem && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${isLight ? 'bg-white/80 border-[#ded6c5] text-stone-800 shadow-xs' : 'bg-white/5 border-white/10 text-zinc-300'}`}>
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-xs"
               style={{ backgroundColor: bottomColor }}
             />
             <span className="font-medium truncate max-w-[100px]">{bottomItem.name}</span>
             <button
               onClick={() => onUnequip('bottom')}
-              className="text-zinc-500 hover:text-white ml-0.5 cursor-pointer"
+              className={`${isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-500 hover:text-white'} ml-0.5 cursor-pointer`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -740,15 +879,15 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         )}
 
         {headwearItem && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${isLight ? 'bg-white/80 border-[#ded6c5] text-stone-800 shadow-xs' : 'bg-white/5 border-white/10 text-zinc-300'}`}>
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-xs"
               style={{ backgroundColor: headwearColor }}
             />
             <span className="font-medium truncate max-w-[100px]">{headwearItem.name}</span>
             <button
               onClick={() => onUnequip('headwear')}
-              className="text-zinc-500 hover:text-white ml-0.5 cursor-pointer"
+              className={`${isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-500 hover:text-white'} ml-0.5 cursor-pointer`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -756,15 +895,15 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         )}
 
         {accessoryItem && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${isLight ? 'bg-white/80 border-[#ded6c5] text-stone-800 shadow-xs' : 'bg-white/5 border-white/10 text-zinc-300'}`}>
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-xs"
               style={{ backgroundColor: accessoryColor }}
             />
             <span className="font-medium truncate max-w-[100px]">{accessoryItem.name}</span>
             <button
               onClick={() => onUnequip('accessory')}
-              className="text-zinc-500 hover:text-white ml-0.5 cursor-pointer"
+              className={`${isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-500 hover:text-white'} ml-0.5 cursor-pointer`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -772,15 +911,15 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
         )}
 
         {footwearItem && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white/5 border border-white/10 rounded-lg text-xs text-zinc-300">
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${isLight ? 'bg-white/80 border-[#ded6c5] text-stone-800 shadow-xs' : 'bg-white/5 border-white/10 text-zinc-300'}`}>
             <span
-              className="w-2.5 h-2.5 rounded-full border border-white/20"
+              className="w-2.5 h-2.5 rounded-full border border-black/10 shadow-xs"
               style={{ backgroundColor: footwearColor }}
             />
             <span className="font-medium truncate max-w-[100px]">{footwearItem.name}</span>
             <button
               onClick={() => onUnequip('footwear')}
-              className="text-zinc-500 hover:text-white ml-0.5 cursor-pointer"
+              className={`${isLight ? 'text-stone-400 hover:text-stone-700' : 'text-zinc-500 hover:text-white'} ml-0.5 cursor-pointer`}
             >
               <X className="w-3 h-3" />
             </button>

@@ -1,1 +1,60 @@
 @import "tailwindcss";
+
+/* Smooth scrolling for navigation rows */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar Styles for Navigation Bars & Containers */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Light / Dark Mode Scrollbar Styling */
+.light .scrollbar-thin::-webkit-scrollbar,
+.scrollbar-thin-light::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+.light .scrollbar-thin::-webkit-scrollbar-track,
+.scrollbar-thin-light::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 9999px;
+}
+.light .scrollbar-thin::-webkit-scrollbar-thumb,
+.scrollbar-thin-light::-webkit-scrollbar-thumb {
+  background: rgba(201, 59, 43, 0.35);
+  border-radius: 9999px;
+}
+.light .scrollbar-thin::-webkit-scrollbar-thumb:hover,
+.scrollbar-thin-light::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 59, 43, 0.65);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar,
+.scrollbar-thin-dark::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-track,
+.scrollbar-thin-dark::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb,
+.scrollbar-thin-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 117, 102, 0.4);
+  border-radius: 9999px;
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover,
+.scrollbar-thin-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 117, 102, 0.75);
+}

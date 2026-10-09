@@ -89,6 +89,16 @@ export interface CulturalWarning {
   };
 }
 
+export interface HarmonyCriterion {
+  id: string;
+  name: string;
+  score: number;
+  maxScore: number;
+  weight: string;
+  status: 'excellent' | 'good' | 'average' | 'improve';
+  comment: string;
+}
+
 export interface ColorHarmonyResult {
   score: number;
   grade: 'Tuyệt mỹ' | 'Hài hòa' | 'Khá' | 'Xung đột nhẹ' | 'Cần điều chỉnh';
@@ -97,6 +107,7 @@ export interface ColorHarmonyResult {
   elementRelation: string;
   feedback: string;
   tips: string[];
+  criteria: HarmonyCriterion[];
 }
 
 export interface LookbookEntry {

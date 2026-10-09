@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserProfile, LookbookEntry, OutfitState, CulturalEra } from '../types';
 import { userService } from '../services/userService';
 import { 
@@ -6,14 +6,11 @@ import {
   User, 
   Settings, 
   Bookmark, 
-  Sparkles, 
-  LogOut, 
   UserPlus, 
   LogIn, 
   Check, 
   Trash2, 
-  ArrowRight,
-  ShieldCheck
+  ArrowRight
 } from 'lucide-react';
 
 interface UserProfileModalProps {
@@ -24,6 +21,7 @@ interface UserProfileModalProps {
   savedLookbooks: LookbookEntry[];
   onApplyLookbook: (outfit: OutfitState) => void;
   onDeleteLookbook: (id: string) => void;
+  theme?: 'dark' | 'light';
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
@@ -34,8 +32,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   savedLookbooks,
   onApplyLookbook,
   onDeleteLookbook,
+  theme = 'dark',
 }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'preferences' | 'saved_looks' | 'auth'>('profile');
+
+  const isLight = theme === 'light';
 
   // Edit profile state
   const [displayName, setDisplayName] = useState(currentUser.displayName);
@@ -54,6 +55,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [preferredVibe, setPreferredVibe] = useState(currentUser.preferences.preferredVibe);
   const [defaultAvatar, setDefaultAvatar] = useState(currentUser.preferences.defaultAvatar);
   const [enableTips, setEnableTips] = useState(currentUser.preferences.enableCulturalTips);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -110,10 +121,27 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-[#16161b] rounded-2xl border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className={`relative w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden max-h-[90vh] flex flex-col transition-colors ${
+          isLight ? 'bg-white border-stone-200 text-stone-800' : 'bg-[#16161b] border-white/10 text-zinc-300'
+        }`}
+      >
         {/* Modal Header & User Hero */}
-        <div className="p-5 border-b border-white/10 bg-gradient-to-r from-[#1c1c24] via-[#1c1c22] to-[#251b1f] flex items-center justify-between">
+        <div
+          className={`p-5 border-b flex items-center justify-between transition-colors ${
+            isLight
+              ? 'bg-gradient-to-r from-[#f7f3ec] to-[#f2ecdf] border-stone-200'
+              : 'bg-gradient-to-r from-[#1c1c24] via-[#1c1c22] to-[#251b1f] border-white/10'
+          }`}
+        >
           <div className="flex items-center gap-3.5">
             <div className="relative">
               <img
@@ -121,18 +149,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 alt={currentUser.displayName}
                 className="w-12 h-12 rounded-full border-2 border-[#c93b2b] object-cover shadow-md"
               />
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#16161b]" />
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-[#16161b]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-serif text-lg font-bold text-white tracking-tight">
+                <h3 className={`font-serif text-lg font-bold tracking-tight ${isLight ? 'text-stone-900' : 'text-white'}`}>
                   {currentUser.displayName}
                 </h3>
-                <span className="text-[11px] px-2 py-0.5 bg-[#c93b2b]/20 text-[#ff7566] border border-[#c93b2b]/30 rounded-md font-medium">
+                <span className={`text-[11px] px-2 py-0.5 rounded-md font-medium border ${
+                  isLight ? 'bg-[#c93b2b]/10 text-[#c93b2b] border-[#c93b2b]/30' : 'bg-[#c93b2b]/20 text-[#ff7566] border-[#c93b2b]/30'
+                }`}>
                   {currentUser.title}
                 </span>
               </div>
-              <p className="text-xs text-zinc-400">
+              <p className={`text-xs ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>
                 @{currentUser.username} · Tham gia {currentUser.joinedDate}
               </p>
             </div>
@@ -140,20 +170,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              isLight ? 'text-stone-500 hover:text-stone-900 hover:bg-stone-200' : 'text-zinc-400 hover:text-white hover:bg-white/10'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1 px-5 pt-3 border-b border-white/5 bg-[#141418] text-xs">
+        <div className={`flex items-center gap-1 px-5 pt-3 border-b text-xs ${isLight ? 'bg-stone-50 border-stone-200' : 'bg-[#141418] border-white/5'}`}>
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex items-center gap-1.5 px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer ${
               activeTab === 'profile'
-                ? 'border-[#c93b2b] text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#c93b2b] text-[#c93b2b] font-semibold'
+                : isLight ? 'border-transparent text-stone-500 hover:text-stone-800' : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <User className="w-3.5 h-3.5" />
@@ -164,8 +196,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             onClick={() => setActiveTab('saved_looks')}
             className={`flex items-center gap-1.5 px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer ${
               activeTab === 'saved_looks'
-                ? 'border-[#c93b2b] text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#c93b2b] text-[#c93b2b] font-semibold'
+                : isLight ? 'border-transparent text-stone-500 hover:text-stone-800' : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
@@ -176,8 +208,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             onClick={() => setActiveTab('preferences')}
             className={`flex items-center gap-1.5 px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer ${
               activeTab === 'preferences'
-                ? 'border-[#c93b2b] text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#c93b2b] text-[#c93b2b] font-semibold'
+                : isLight ? 'border-transparent text-stone-500 hover:text-stone-800' : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Settings className="w-3.5 h-3.5" />
@@ -188,8 +220,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             onClick={() => setActiveTab('auth')}
             className={`flex items-center gap-1.5 px-3.5 py-2 font-medium border-b-2 transition-colors cursor-pointer ${
               activeTab === 'auth'
-                ? 'border-[#c93b2b] text-white'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#c93b2b] text-[#c93b2b] font-semibold'
+                : isLight ? 'border-transparent text-stone-500 hover:text-stone-800' : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <LogIn className="w-3.5 h-3.5" />
@@ -200,50 +232,58 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         {/* Tab Contents */}
         <div className="p-5 sm:p-6 overflow-y-auto flex-1 scrollbar-thin">
           {saveSuccess && (
-            <div className="mb-4 p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-400" />
+            <div className="mb-4 p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-emerald-600 dark:text-emerald-300 text-xs flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-500" />
               <span>Đã cập nhật thông tin thành công vào bộ nhớ cục bộ (Local Storage)!</span>
             </div>
           )}
 
           {/* TAB 1: PROFILE EDIT */}
           {activeTab === 'profile' && (
-            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs sm:text-sm text-zinc-300">
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs sm:text-sm">
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Tên hiển thị</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Tên hiển thị</label>
                 <input
                   type="text"
                   required
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                  className={`w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                    isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-white/5 border-white/10 text-white'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Danh hiệu Stylist</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Danh hiệu Stylist</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                  className={`w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                    isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-white/5 border-white/10 text-white'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Tiểu sử (Bio)</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Tiểu sử (Bio)</label>
                 <textarea
                   rows={3}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Giới thiệu phong cách và đam mê của bạn với cổ phục Việt..."
-                  className="w-full px-3.5 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b] resize-none"
+                  className={`w-full px-3.5 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] resize-none ${
+                    isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-white/5 border-white/10 text-white'
+                  }`}
                 />
               </div>
 
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5 text-xs text-zinc-400 flex items-center justify-between">
+              <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                isLight ? 'bg-stone-50 border-stone-200 text-stone-500' : 'bg-white/5 border-white/5 text-zinc-400'
+              }`}>
                 <span>Trạng thái lưu trữ:</span>
-                <span className="text-zinc-200 font-mono">LocalStorage Verified</span>
+                <span className={`font-mono font-medium ${isLight ? 'text-stone-800' : 'text-zinc-200'}`}>LocalStorage Verified</span>
               </div>
 
               <div className="pt-2 flex justify-end">
@@ -261,28 +301,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {activeTab === 'saved_looks' && (
             <div className="space-y-3">
               {savedLookbooks.length === 0 ? (
-                <div className="text-center py-12 text-zinc-500 space-y-2">
-                  <Bookmark className="w-8 h-8 mx-auto text-zinc-600" />
+                <div className={`text-center py-12 space-y-2 ${isLight ? 'text-stone-400' : 'text-zinc-500'}`}>
+                  <Bookmark className="w-8 h-8 mx-auto" />
                   <p className="text-xs">Bạn chưa lưu lookbook nào.</p>
-                  <p className="text-[11px] text-zinc-600">
-                    Hãy bấm nút "Lưu Lookbook" ở góc trên màn hình khi phối xong trang phục ưng ý!
+                  <p className="text-[11px]">
+                    Hãy bấm nút "Lưu Look" ở góc trên màn hình khi phối xong trang phục ưng ý!
                   </p>
                 </div>
               ) : (
                 savedLookbooks.map((look) => (
                   <div
                     key={look.id}
-                    className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl flex items-center justify-between gap-3 transition-colors"
+                    className={`p-3.5 border rounded-xl flex items-center justify-between gap-3 transition-colors ${
+                      isLight ? 'bg-stone-50 hover:bg-stone-100 border-stone-200' : 'bg-white/5 hover:bg-white/10 border-white/5'
+                    }`}
                   >
                     <div>
-                      <h4 className="font-semibold text-white text-xs sm:text-sm">
+                      <h4 className={`font-semibold text-xs sm:text-sm ${isLight ? 'text-stone-900' : 'text-white'}`}>
                         {look.title}
                       </h4>
-                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                      <p className={`text-[11px] mt-0.5 ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>
                         {look.eventName} · {look.createdAt} · Hòa sắc {look.colorHarmonyScore}/100
                       </p>
                       {look.notes && (
-                        <p className="text-[11px] text-zinc-500 italic mt-1 line-clamp-1">
+                        <p className={`text-[11px] italic mt-1 line-clamp-1 ${isLight ? 'text-stone-500' : 'text-zinc-500'}`}>
                           "{look.notes}"
                         </p>
                       )}
@@ -294,7 +336,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           onApplyLookbook(look.outfit);
                           onClose();
                         }}
-                        className="px-3 py-1.5 bg-[#c93b2b]/20 hover:bg-[#c93b2b] text-[#ff7566] hover:text-white border border-[#c93b2b]/30 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer border ${
+                          isLight
+                            ? 'bg-[#c93b2b]/10 hover:bg-[#c93b2b] text-[#c93b2b] hover:text-white border-[#c93b2b]/30'
+                            : 'bg-[#c93b2b]/20 hover:bg-[#c93b2b] text-[#ff7566] hover:text-white border-[#c93b2b]/30'
+                        }`}
                         title="Mặc lại set đồ này lên Avatar"
                       >
                         <span>Mặc Ngay</span>
@@ -302,7 +348,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       </button>
                       <button
                         onClick={() => onDeleteLookbook(look.id)}
-                        className="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          isLight ? 'text-stone-400 hover:text-rose-600' : 'text-zinc-500 hover:text-rose-400'
+                        }`}
                         title="Xóa khỏi danh sách lưu"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -316,13 +364,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* TAB 3: PREFERENCES */}
           {activeTab === 'preferences' && (
-            <div className="space-y-4 text-xs sm:text-sm text-zinc-300">
+            <div className="space-y-4 text-xs sm:text-sm">
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Triều đại / Thời kỳ yêu thích</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Triều đại / Thời kỳ yêu thích</label>
                 <select
                   value={favoriteEra}
                   onChange={(e) => setFavoriteEra(e.target.value as CulturalEra)}
-                  className="w-full px-3 py-2 bg-[#202026] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                  className={`w-full px-3 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                    isLight ? 'bg-stone-50 border-stone-300 text-stone-900' : 'bg-[#202026] border-white/10 text-white'
+                  }`}
                 >
                   <option value="Triều Nguyễn (1802–1945)">Triều Nguyễn (1802–1945) - Ngũ thân, Áo tấc, Nhật bình</option>
                   <option value="Triều Lê (1428–1789)">Triều Lê (1428–1789) - Giao lĩnh, Trực lĩnh</option>
@@ -333,7 +383,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Phong cách định hướng</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Phong cách định hướng</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(['Cổ phong thuần túy', 'Remix đường phố', 'Vị lai Minimalist'] as const).map((vibe) => (
                     <button
@@ -342,8 +392,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       onClick={() => setPreferredVibe(vibe)}
                       className={`p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
                         preferredVibe === vibe
-                          ? 'bg-[#c93b2b]/20 border-[#c93b2b] text-white'
-                          : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
+                          ? isLight ? 'bg-[#c93b2b]/15 border-[#c93b2b] text-[#c93b2b] font-semibold' : 'bg-[#c93b2b]/20 border-[#c93b2b] text-white font-semibold'
+                          : isLight ? 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100' : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
                       }`}
                     >
                       {vibe}
@@ -353,7 +403,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-1 font-medium">Dáng Avatar mặc định</label>
+                <label className={`block mb-1 font-medium ${isLight ? 'text-stone-600' : 'text-zinc-400'}`}>Dáng Avatar mặc định</label>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { id: 'female', label: 'Nữ Cổ Phong' },
@@ -367,8 +417,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       onClick={() => setDefaultAvatar(av.id as any)}
                       className={`p-2 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
                         defaultAvatar === av.id
-                          ? 'bg-[#c93b2b]/20 border-[#c93b2b] text-white'
-                          : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
+                          ? isLight ? 'bg-[#c93b2b]/15 border-[#c93b2b] text-[#c93b2b] font-semibold' : 'bg-[#c93b2b]/20 border-[#c93b2b] text-white font-semibold'
+                          : isLight ? 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100' : 'bg-white/5 border-white/5 text-zinc-400 hover:text-white'
                       }`}
                     >
                       {av.label}
@@ -377,10 +427,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </div>
               </div>
 
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between">
+              <div className={`p-3 rounded-xl border flex items-center justify-between ${
+                isLight ? 'bg-stone-50 border-stone-200' : 'bg-white/5 border-white/5'
+              }`}>
                 <div>
-                  <h5 className="font-semibold text-white text-xs">Cảnh báo văn hóa thông minh</h5>
-                  <p className="text-[11px] text-zinc-400">Hiển thị gợi ý & giải thích lịch sử khi có phối đồ nhầm lẫn.</p>
+                  <h5 className={`font-semibold text-xs ${isLight ? 'text-stone-800' : 'text-white'}`}>Cảnh báo văn hóa thông minh</h5>
+                  <p className={`text-[11px] ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>Hiển thị gợi ý & giải thích lịch sử khi có phối đồ nhầm lẫn.</p>
                 </div>
                 <input
                   type="checkbox"
@@ -404,10 +456,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* TAB 4: AUTH & SWITCH USER */}
           {activeTab === 'auth' && (
-            <div className="space-y-6 text-xs sm:text-sm text-zinc-300">
+            <div className="space-y-6 text-xs sm:text-sm">
               {/* Sign in with existing username */}
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-3">
-                <div className="flex items-center gap-2 text-white font-semibold text-xs sm:text-sm">
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                isLight ? 'bg-stone-50 border-stone-200' : 'bg-white/5 border-white/10'
+              }`}>
+                <div className={`flex items-center gap-2 font-semibold text-xs sm:text-sm ${isLight ? 'text-stone-900' : 'text-white'}`}>
                   <LogIn className="w-4 h-4 text-[#c93b2b]" />
                   <h4>Đăng Nhập Hoặc Chuyển Đổi Tài Khoản</h4>
                 </div>
@@ -418,7 +472,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     placeholder="Nhập username (VD: ancophong)..."
                     value={loginUsername}
                     onChange={(e) => setLoginUsername(e.target.value)}
-                    className="flex-1 px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#c93b2b]"
+                    className={`flex-1 px-3 py-2 border rounded-xl focus:outline-none focus:border-[#c93b2b] ${
+                      isLight ? 'bg-white border-stone-300 text-stone-900' : 'bg-black/40 border-white/10 text-white'
+                    }`}
                   />
                   <button
                     type="submit"
@@ -430,9 +486,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
 
               {/* Create new account */}
-              <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-3">
-                <div className="flex items-center gap-2 text-white font-semibold text-xs sm:text-sm">
-                  <UserPlus className="w-4 h-4 text-emerald-400" />
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                isLight ? 'bg-stone-50 border-stone-200' : 'bg-white/5 border-white/10'
+              }`}>
+                <div className={`flex items-center gap-2 font-semibold text-xs sm:text-sm ${isLight ? 'text-stone-900' : 'text-white'}`}>
+                  <UserPlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <h4>Tạo Tài Khoản Stylist Mới</h4>
                 </div>
                 <form onSubmit={handleRegister} className="space-y-2.5">
@@ -442,14 +500,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     placeholder="Username mới (viết liền không dấu)..."
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
-                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                    className={`w-full px-3 py-2 border rounded-xl focus:outline-none focus:border-emerald-500 ${
+                      isLight ? 'bg-white border-stone-300 text-stone-900' : 'bg-black/40 border-white/10 text-white'
+                    }`}
                   />
                   <input
                     type="text"
                     placeholder="Tên hiển thị (VD: Hà Linh Cổ Phong)..."
                     value={newDisplayName}
                     onChange={(e) => setNewDisplayName(e.target.value)}
-                    className="w-full px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                    className={`w-full px-3 py-2 border rounded-xl focus:outline-none focus:border-emerald-500 ${
+                      isLight ? 'bg-white border-stone-300 text-stone-900' : 'bg-black/40 border-white/10 text-white'
+                    }`}
                   />
                   <button
                     type="submit"

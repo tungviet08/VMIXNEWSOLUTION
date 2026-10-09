@@ -39,7 +39,45 @@ export function analyzeColorHarmony(outfit: OutfitState): ColorHarmonyResult {
       dominantElement: 'Thổ',
       elementRelation: 'Cân bằng tự nhiên',
       feedback: 'Chưa có trang phục được chọn để phân tích hòa sắc.',
-      tips: ['Hãy chọn ít nhất áo và quần để khởi động phân tích ngũ hành.']
+      tips: ['Hãy chọn ít nhất áo và quần để khởi động phân tích ngũ hành.'],
+      criteria: [
+        {
+          id: 'ngu_hanh',
+          name: 'Quy Luật Ngũ Hành',
+          score: 22,
+          maxScore: 30,
+          weight: '30%',
+          status: 'good',
+          comment: 'Chờ trang bị thêm trang phục để luận ngũ hành'
+        },
+        {
+          id: 'contrast_ratio',
+          name: 'Tương Phản & Tỷ Lệ Màu',
+          score: 19,
+          maxScore: 25,
+          weight: '25%',
+          status: 'good',
+          comment: 'Cần phối lớp màu áo trong - ngoài'
+        },
+        {
+          id: 'heritage_authenticity',
+          name: 'Bản Sắc Di Sản Cổ Truyền',
+          score: 19,
+          maxScore: 25,
+          weight: '25%',
+          status: 'good',
+          comment: 'Ưu tiên màu sắc tự nhiên Việt Nam'
+        },
+        {
+          id: 'modern_aesthetic',
+          name: 'Hòa Hợp & Cảm Quan Gen Z',
+          score: 15,
+          maxScore: 20,
+          weight: '20%',
+          status: 'average',
+          comment: 'Outfit đang ở cấu hình mặc định'
+        }
+      ]
     };
   }
 
@@ -130,6 +168,63 @@ export function analyzeColorHarmony(outfit: OutfitState): ColorHarmonyResult {
     ? `Bảng phối đạt độ hài hòa xuất sắc ${baseScore}/100 với hành ${dominantElement} làm chủ đạo. Khí chất vừa giữ được nét trầm mặc phương Đông vừa thời thượng.`
     : `Bảng phối đạt ${baseScore}/100. Đang có sự cạnh tranh ánh nhìn giữa các lớp màu. Bạn có thể thêm phụ kiện trung hòa.`;
 
+  // Detailed Criteria Breakdown (Bảng Tiêu Chí Đánh Giá Chi Tiết)
+  let scoreNguHanh = 24;
+  let commentNguHanh = 'Ngũ Hành tương phối đạt mức cân bằng.';
+  let statusNguHanh: 'excellent' | 'good' | 'average' | 'improve' = 'good';
+
+  if (sinhCount > 0 && khacCount === 0) {
+    scoreNguHanh = 29;
+    commentNguHanh = 'Tuyệt vời: Các hành tương sinh tuần hoàn thuận khí tự nhiên.';
+    statusNguHanh = 'excellent';
+  } else if (uniqueElements.length === 1) {
+    scoreNguHanh = 27;
+    commentNguHanh = 'Đơn sắc thuần khiết, đồng hành nhất quán thanh tao.';
+    statusNguHanh = 'excellent';
+  } else if (khacCount > 0 && sinhCount === 0) {
+    scoreNguHanh = 18;
+    commentNguHanh = 'Xuất hiện tương khắc quang học, nên gia giảm sắc độ.';
+    statusNguHanh = 'improve';
+  } else {
+    scoreNguHanh = 23;
+    commentNguHanh = 'Đan xen tương sinh và tương phản tạo điểm nhấn thị giác.';
+    statusNguHanh = 'good';
+  }
+
+  // Criterion 2: Tỷ Lệ & Tương Phản Thị Giác (Max 25)
+  const isOuterContrastBottom = outfit.outerId && outfit.bottomId && outfit.colors.outer.toUpperCase() !== outfit.colors.bottom.toUpperCase();
+  const scoreContrast = isOuterContrastBottom ? 24 : 21;
+  const commentContrast = isOuterContrastBottom 
+    ? 'Tỷ lệ mảng màu chính - phụ phân bổ rõ ràng, tôn dáng phục trang.'
+    : 'Bảng màu an toàn, có thể tăng thêm tương phản nhẹ ở lớp lót hoặc khăn.';
+  const statusContrast = isOuterContrastBottom ? 'excellent' : 'good';
+
+  // Criterion 3: Bản Sắc Di Sản Cổ Truyền (Max 25)
+  const traditionalColorCount = [outfit.colors.outer, outfit.colors.inner, outfit.colors.bottom, outfit.colors.headwear]
+    .filter(c => TRADITIONAL_COLORS.some(tc => tc.hex.toUpperCase() === c.toUpperCase())).length;
+  const scoreHeritage = traditionalColorCount >= 3 ? 24 : 22;
+  const commentHeritage = traditionalColorCount >= 3
+    ? 'Ứng dụng thuần thục các sắc độ sơn mài, chàm, ngọc bích chuẩn nếp xưa.'
+    : 'Màu sắc hiện đại kết hợp hài hòa với phom dáng truyền thống.';
+  const statusHeritage = 'excellent';
+
+  // Criterion 4: Hòa Hợp & Cảm Quan Gen Z (Max 20)
+  const scoreModern = Math.round(Math.max(14, Math.min(20, baseScore - (scoreNguHanh + scoreContrast + scoreHeritage) + 18)));
+  const commentModern = scoreModern >= 18
+    ? 'Bản phối cực kỳ thời thượng, đậm tinh thần Gen Z Remix tự tin tỏa sáng.'
+    : 'Tổng thể ưa nhìn, thích hợp diện trong các dịp chụp ảnh kỷ niệm.';
+  const statusModern = scoreModern >= 18 ? 'excellent' : 'good';
+
+  // Recalculate baseScore from sum of criteria
+  baseScore = scoreNguHanh + scoreContrast + scoreHeritage + scoreModern;
+  baseScore = Math.max(50, Math.min(99, baseScore));
+
+  if (baseScore >= 92) grade = 'Tuyệt mỹ';
+  else if (baseScore >= 82) grade = 'Hài hòa';
+  else if (baseScore >= 70) grade = 'Khá';
+  else if (baseScore >= 60) grade = 'Xung đột nhẹ';
+  else grade = 'Cần điều chỉnh';
+
   return {
     score: baseScore,
     grade,
@@ -137,6 +232,44 @@ export function analyzeColorHarmony(outfit: OutfitState): ColorHarmonyResult {
     supportingElement: uniqueElements.find(e => e !== dominantElement),
     elementRelation: relationText,
     feedback,
-    tips
+    tips,
+    criteria: [
+      {
+        id: 'ngu_hanh',
+        name: 'Quy Luật Ngũ Hành',
+        score: scoreNguHanh,
+        maxScore: 30,
+        weight: '30%',
+        status: statusNguHanh,
+        comment: commentNguHanh
+      },
+      {
+        id: 'contrast_ratio',
+        name: 'Tương Phản & Tỷ Lệ Màu',
+        score: scoreContrast,
+        maxScore: 25,
+        weight: '25%',
+        status: statusContrast,
+        comment: commentContrast
+      },
+      {
+        id: 'heritage_authenticity',
+        name: 'Bản Sắc Di Sản Cổ Truyền',
+        score: scoreHeritage,
+        maxScore: 25,
+        weight: '25%',
+        status: statusHeritage,
+        comment: commentHeritage
+      },
+      {
+        id: 'modern_aesthetic',
+        name: 'Hòa Hợp & Cảm Quan Gen Z',
+        score: scoreModern,
+        maxScore: 20,
+        weight: '20%',
+        status: statusModern,
+        comment: commentModern
+      }
+    ]
   };
 }
