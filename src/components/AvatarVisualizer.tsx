@@ -9,7 +9,9 @@ import {
   Maximize2, 
   Minimize2, 
   X,
-  Camera
+  Camera,
+  Undo2,
+  Redo2
 } from 'lucide-react';
 
 interface AvatarVisualizerProps {
@@ -23,6 +25,11 @@ interface AvatarVisualizerProps {
   userPhotoUrl: string | null;
   setUserPhotoUrl: (url: string | null) => void;
   theme?: 'dark' | 'light';
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onApplyQuickPreset?: (gender: 'female' | 'male') => void;
 }
 
 export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
@@ -36,6 +43,11 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
   userPhotoUrl,
   setUserPhotoUrl,
   theme = 'dark',
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  onApplyQuickPreset,
 }) => {
   const [zoomMode, setZoomMode] = React.useState<'full' | 'close-up'>('full');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -87,86 +99,156 @@ export const AvatarVisualizer: React.FC<AvatarVisualizerProps> = ({
       }`}
     >
       {/* Top Stage Controls */}
-      <div className="w-full flex items-center justify-between gap-2 z-20">
-        {/* Avatar Preset Switcher & Photo Upload */}
-        <div
-          className={`flex items-center gap-1 sm:gap-1.5 p-1 rounded-xl border text-xs backdrop-blur-md overflow-x-auto scrollbar-thin scroll-smooth max-w-full ${
-            isLight
-              ? 'bg-white/90 border-[#e7e1d5] shadow-xs'
-              : 'bg-black/40 border-white/10'
-          }`}
-        >
-          <button
-            onClick={() => {
-              setAvatarType('female');
-              setUserPhotoUrl(null);
-            }}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-              !userPhotoUrl && avatarType === 'female'
-                ? 'bg-[#c93b2b] text-white shadow-sm'
-                : isLight
-                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-                : 'text-zinc-400 hover:text-white'
+      <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 z-20">
+        {/* Model Gender & Face Switcher */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <div
+            className={`flex items-center gap-1 p-1 rounded-xl border text-xs backdrop-blur-md ${
+              isLight
+                ? 'bg-white/90 border-[#e7e1d5] shadow-xs'
+                : 'bg-black/40 border-white/10'
             }`}
           >
-            Nữ Cổ Phong
-          </button>
-          <button
-            onClick={() => {
-              setAvatarType('male');
-              setUserPhotoUrl(null);
-            }}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-              !userPhotoUrl && avatarType === 'male'
-                ? 'bg-[#c93b2b] text-white shadow-sm'
-                : isLight
-                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Nam Sĩ Tử
-          </button>
-          <button
-            onClick={() => {
-              setAvatarType('cyber');
-              setUserPhotoUrl(null);
-            }}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-              !userPhotoUrl && avatarType === 'cyber'
-                ? 'bg-[#c93b2b] text-white shadow-sm'
-                : isLight
-                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            Cyber Gen Z
-          </button>
+            <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 ${
+              isLight ? 'text-stone-500' : 'text-zinc-400'
+            }`}>
+              Giới Tính:
+            </span>
 
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            accept="image/*"
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
-              userPhotoUrl
-                ? 'bg-[#c93b2b] text-white shadow-sm'
-                : isLight
-                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-                : 'text-zinc-400 hover:text-white hover:bg-white/5'
-            }`}
-            title="Tải ảnh khuôn mặt / chân dung của bạn để thử đồ trực tiếp"
-          >
-            <Camera className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Ảnh Của Bạn</span>
-          </button>
+            {/* Female Button */}
+            <button
+              onClick={() => {
+                setAvatarType('female');
+                setUserPhotoUrl(null);
+              }}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                !userPhotoUrl && avatarType === 'female'
+                  ? 'bg-[#c93b2b] text-white shadow-sm'
+                  : isLight
+                  ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Chọn người mẫu Nữ (Nữ Cổ Phong, tóc dài thướt tha)"
+            >
+              <span>👩 Nữ</span>
+            </button>
+
+            {/* Male Button */}
+            <button
+              onClick={() => {
+                setAvatarType('male');
+                setUserPhotoUrl(null);
+              }}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                !userPhotoUrl && avatarType === 'male'
+                  ? 'bg-[#c93b2b] text-white shadow-sm'
+                  : isLight
+                  ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Chọn người mẫu Nam (Nam Sĩ Tử, nho nhã đĩnh đạc)"
+            >
+              <span>👨 Nam</span>
+            </button>
+
+            {/* Cyber / Unisex Button */}
+            <button
+              onClick={() => {
+                setAvatarType('cyber');
+                setUserPhotoUrl(null);
+              }}
+              className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                !userPhotoUrl && avatarType === 'cyber'
+                  ? 'bg-[#c93b2b] text-white shadow-sm'
+                  : isLight
+                  ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Người mẫu Cyber Gen Z (Phi giới tính / Remix)"
+            >
+              <span>⚡ Gen Z</span>
+            </button>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className={`px-2 py-1 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer ${
+                userPhotoUrl
+                  ? 'bg-[#c93b2b] text-white shadow-sm'
+                  : isLight
+                  ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/5'
+              }`}
+              title="Tải ảnh khuôn mặt / chân dung của bạn để thử đồ trực tiếp"
+            >
+              <Camera className="w-3 h-3" />
+              <span className="hidden sm:inline">Ảnh bạn</span>
+            </button>
+          </div>
+
+          {/* Quick Starter Preset Switcher for the active gender */}
+          {onApplyQuickPreset && !userPhotoUrl && (
+            <button
+              onClick={() => onApplyQuickPreset(avatarType === 'male' ? 'male' : 'female')}
+              className={`px-2.5 py-1 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer ${
+                isLight
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200 shadow-2xs'
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/20'
+              }`}
+              title={`Mặc thử ngay set trang phục chuẩn cho người mẫu ${avatarType === 'male' ? 'Nam' : 'Nữ'}`}
+            >
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              <span>Mặc set {avatarType === 'male' ? 'Nam' : 'Nữ'} mẫu</span>
+            </button>
+          )}
         </div>
 
         {/* View mode & canvas tools */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+          {/* Undo Button */}
+          {onUndo && (
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`p-2 rounded-xl border transition-all ${
+                !canUndo
+                  ? 'opacity-30 cursor-not-allowed border-transparent'
+                  : isLight
+                  ? 'bg-white/90 hover:bg-white border-[#e7e1d5] text-stone-700 hover:text-[#c93b2b] shadow-xs cursor-pointer hover:scale-105 active:scale-95'
+                  : 'bg-black/40 hover:bg-black/60 border-white/10 text-zinc-300 hover:text-white cursor-pointer hover:scale-105 active:scale-95'
+              }`}
+              title={canUndo ? 'Hoàn tác trang phục trước (Ctrl+Z)' : 'Chưa có thao tác nào để hoàn tác'}
+              aria-label="Undo outfit"
+            >
+              <Undo2 className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Redo Button */}
+          {onRedo && (
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              className={`p-2 rounded-xl border transition-all ${
+                !canRedo
+                  ? 'opacity-30 cursor-not-allowed border-transparent'
+                  : isLight
+                  ? 'bg-white/90 hover:bg-white border-[#e7e1d5] text-stone-700 hover:text-[#c93b2b] shadow-xs cursor-pointer hover:scale-105 active:scale-95'
+                  : 'bg-black/40 hover:bg-black/60 border-white/10 text-zinc-300 hover:text-white cursor-pointer hover:scale-105 active:scale-95'
+              }`}
+              title={canRedo ? 'Làm lại trang phục (Ctrl+Y / Ctrl+Shift+Z)' : 'Không có thao tác nào để làm lại'}
+              aria-label="Redo outfit"
+            >
+              <Redo2 className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={() => setZoomMode(zoomMode === 'full' ? 'close-up' : 'full')}
             className={`p-2 rounded-xl border transition-colors cursor-pointer ${

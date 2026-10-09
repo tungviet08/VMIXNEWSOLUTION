@@ -26,16 +26,27 @@ import { LookbookModal } from './components/LookbookModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { ComparisonModal } from './components/ComparisonModal';
 import { CommunityShowcase } from './components/CommunityShowcase';
+import { GroupCoordinationView } from './components/GroupCoordinationView';
 import { AiAssistant } from './components/AiAssistant';
+import { LiveWeatherModal } from './components/LiveWeatherModal';
+import { weatherService, CULTURAL_CITIES } from './services/weatherService';
+import { useOutfitHistory } from './hooks/useOutfitHistory';
+import { LiveWeatherData, WeatherCity } from './types';
 import { Shirt, Palette } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'styling' | 'wardrobe' | 'community' | 'comparison'>('styling');
+  const [activeTab, setActiveTab] = useState<'styling' | 'wardrobe' | 'community' | 'comparison' | 'group'>('styling');
   const [wardrobe, setWardrobe] = useState<ClothingItem[]>(INITIAL_WARDROBE);
   const [currentEvent, setCurrentEvent] = useState<EventModel>(PRESET_EVENTS[0]);
   const [avatarType, setAvatarType] = useState<'female' | 'male' | 'unisex' | 'cyber'>('female');
   const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null);
   const [stylingPanelTab, setStylingPanelTab] = useState<'wardrobe' | 'colors'>('wardrobe');
+
+  // Live Weather State (Open-Meteo Real-time)
+  const [currentWeather, setCurrentWeather] = useState<LiveWeatherData | null>(null);
+  const [selectedWeatherCity, setSelectedWeatherCity] = useState<WeatherCity>(CULTURAL_CITIES[0]); // Default: Hà Nội
+  const [isWeatherModalOpen, setIsWeatherModalOpen] = useState(false);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
 
   // Theme state: 'dark' | 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -79,7 +90,7 @@ export default function App() {
   const [savedLookbooks, setSavedLookbooks] = useState<LookbookEntry[]>(() => userService.getUserLookbooks());
 
   // Default initial outfit: Áo Ngũ Thân tay chẽn xanh chàm + Quần lụa trắng + Khăn đóng đen
-  const [outfit, setOutfit] = useState<OutfitState>({
+  const INITIAL_OUTFIT_STATE: OutfitState = {
     outerId: 'ao-ngu-than-tay-chen',
     innerId: 'inner-ao-canh-trang',
     bottomId: 'bottom-quan-lua-trang',
@@ -94,7 +105,16 @@ export default function App() {
       footwear: '#B82626', // Đỏ son
       accessory: '#F4EFE6', // Bạc sáng
     }
-  });
+  };
+
+  const {
+    outfit,
+    setOutfit,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useOutfitHistory(INITIAL_OUTFIT_STATE);
 
   // Alternative look for comparison mode
   const [lookB, setLookB] = useState<OutfitState>({
@@ -225,6 +245,44 @@ export default function App() {
     });
   };
 
+  const handleQuickGenderOutfit = (gender: 'female' | 'male') => {
+    if (gender === 'male') {
+      setOutfit({
+        outerId: 'ao-ngu-than-tay-chen',
+        innerId: 'inner-ao-canh-trang',
+        bottomId: 'bottom-quan-lua-trang',
+        headwearId: 'head-khan-dong-den',
+        footwearId: 'foot-guoc-moc-nhung',
+        accessoryId: 'acc-quat-xep-ha-dong',
+        colors: {
+          outer: '#1D3B53', // Xanh chàm
+          inner: '#F4EFE6', // Trắng ngà
+          bottom: '#F4EFE6', // Trắng ngà
+          headwear: '#1A1A1E', // Đen mun
+          footwear: '#754B2D', // Nâu gỗ
+          accessory: '#F4EFE6',
+        }
+      });
+    } else {
+      setOutfit({
+        outerId: 'ao-nhat-binh',
+        innerId: 'inner-yem-dao-lua',
+        bottomId: 'bottom-quan-lua-trang',
+        headwearId: 'head-non-quai-thao',
+        footwearId: 'foot-hai-theu-hoa-sen',
+        accessoryId: 'acc-kieng-bac-cham-sen',
+        colors: {
+          outer: '#165B58', // Xanh ngọc
+          inner: '#D9738A', // Hồng sen
+          bottom: '#F4EFE6', // Trắng ngà
+          headwear: '#DDA032', // Vàng kim
+          footwear: '#B82626', // Đỏ son
+          accessory: '#F4EFE6',
+        }
+      });
+    }
+  };
+
   const handleApplyPresetOutfit = (event: EventModel) => {
     const next: OutfitState = {
       colors: { ...outfit.colors },
@@ -276,6 +334,107 @@ export default function App() {
     }
   };
 
+  // Fetch real-time live weather whenever selected city changes
+  useEffect(() => {
+    let isSubscribed = true;
+    const fetchWeather = async () => {
+      setIsWeatherLoading(true);
+      try {
+        const data = await weatherService.getLiveWeather(selectedWeatherCity);
+        if (isSubscribed) {
+          setCurrentWeather(data);
+        }
+      } catch (err) {
+        console.warn('Weather fetch error', err);
+      } finally {
+        if (isSubscribed) {
+          setIsWeatherLoading(false);
+        }
+      }
+    };
+
+    fetchWeather();
+    return () => {
+      isSubscribed = false;
+    };
+  }, [selectedWeatherCity]);
+
+  const handleRefreshWeather = async () => {
+    setIsWeatherLoading(true);
+    try {
+      const data = await weatherService.getLiveWeather(selectedWeatherCity);
+      setCurrentWeather(data);
+    } catch (e) {
+      console.warn('Refresh weather error', e);
+    } finally {
+      setIsWeatherLoading(false);
+    }
+  };
+
+  const handleSelectWeatherCity = (city: WeatherCity) => {
+    setSelectedWeatherCity(city);
+  };
+
+  const handleUseGpsLocation = () => {
+    if (!navigator.geolocation) {
+      return;
+    }
+    setIsWeatherLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const data = await weatherService.getWeatherByCoordinates(
+            position.coords.latitude,
+            position.coords.longitude
+          );
+          setCurrentWeather(data);
+        } catch (e) {
+          console.warn('GPS weather error', e);
+        } finally {
+          setIsWeatherLoading(false);
+        }
+      },
+      (err) => {
+        console.warn('GPS permission denied or timeout', err);
+        setIsWeatherLoading(false);
+      },
+      { timeout: 9000 }
+    );
+  };
+
+  const handleApplyWeatherOutfit = (recommendation: LiveWeatherData['outfitRecommendation']) => {
+    const next: OutfitState = {
+      colors: { ...outfit.colors },
+    };
+
+    recommendation.suggestedItems.forEach((itemId) => {
+      const it = itemsMap[itemId];
+      if (it) {
+        const catKey = `${it.category}Id` as keyof OutfitState;
+        (next as any)[catKey] = it.id;
+        next.colors[it.category] = it.defaultColor;
+      }
+    });
+
+    setOutfit((prev) => ({
+      ...prev,
+      ...next,
+      colors: { ...prev.colors, ...next.colors },
+    }));
+  };
+
+  const handleSyncWeatherWithEvent = (weather: LiveWeatherData) => {
+    setCurrentEvent((prev) => ({
+      ...prev,
+      weather: {
+        temp: Math.round(weather.temperature),
+        condition: weather.weatherCondition,
+        label: `${weather.weatherDescription} · ${Math.round(weather.temperature)}°C tại ${weather.cityName}`,
+      },
+      vibe: weather.outfitRecommendation.summary,
+    }));
+  };
+
   const isLight = theme === 'light';
 
   return (
@@ -295,6 +454,8 @@ export default function App() {
         onOpenAi={() => setIsAiOpen(true)}
         onOpenSaveLookbook={() => setIsLookbookModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenWeather={() => setIsWeatherModalOpen(true)}
+        currentWeather={currentWeather}
       />
 
       {/* Main Content Area */}
@@ -317,6 +478,8 @@ export default function App() {
               onApplyPresetOutfit={handleApplyPresetOutfit}
               onAddCustomEvent={handleAddCustomEvent}
               theme={theme}
+              currentWeather={currentWeather}
+              onOpenWeatherReport={() => setIsWeatherModalOpen(true)}
             />
 
             {/* Stage Split Grid */}
@@ -334,6 +497,11 @@ export default function App() {
                   userPhotoUrl={userPhotoUrl}
                   setUserPhotoUrl={setUserPhotoUrl}
                   theme={theme}
+                  onUndo={undo}
+                  onRedo={redo}
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onApplyQuickPreset={handleQuickGenderOutfit}
                 />
               </div>
 
@@ -385,6 +553,12 @@ export default function App() {
                     theme={theme}
                     harmony={harmony}
                     onSwitchToColorTab={() => setStylingPanelTab('colors')}
+                    onUndo={undo}
+                    onRedo={redo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    avatarType={avatarType}
+                    setAvatarType={setAvatarType}
                   />
                 ) : (
                   <div className="space-y-4 animate-fadeIn">
@@ -429,7 +603,21 @@ export default function App() {
           />
         )}
 
-        {/* TAB 4: COMPARISON MODE */}
+        {/* TAB 4: GROUP & COUPLE COORDINATION */}
+        {activeTab === 'group' && (
+          <GroupCoordinationView
+            wardrobe={wardrobe}
+            itemsMap={itemsMap}
+            mainOutfit={outfit}
+            onApplyOutfitToMain={(newOutfit) => {
+              setOutfit(newOutfit);
+              setActiveTab('styling');
+            }}
+            theme={theme}
+          />
+        )}
+
+        {/* TAB 5: COMPARISON MODE */}
         {activeTab === 'comparison' && (
           <div className="py-4">
             <ComparisonModal
@@ -517,6 +705,20 @@ export default function App() {
           else if (tab === 'community') setActiveTab('community');
           else if (tab === 'wardrobe') setActiveTab('wardrobe');
         }}
+        theme={theme}
+      />
+
+      {/* Real-time Live Weather Report & Outfit Advisor Modal */}
+      <LiveWeatherModal
+        isOpen={isWeatherModalOpen}
+        onClose={() => setIsWeatherModalOpen(false)}
+        currentWeather={currentWeather}
+        onSelectCity={handleSelectWeatherCity}
+        onUseGpsLocation={handleUseGpsLocation}
+        onRefreshWeather={handleRefreshWeather}
+        isLoading={isWeatherLoading}
+        onApplyWeatherOutfit={handleApplyWeatherOutfit}
+        onSyncWithEvent={handleSyncWeatherWithEvent}
         theme={theme}
       />
     </div>

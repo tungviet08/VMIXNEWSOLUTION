@@ -59,6 +59,51 @@ export interface EventModel {
   suggestedItems: string[];
 }
 
+export interface WeatherCity {
+  id: string;
+  name: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  culturalNote: string;
+}
+
+export interface LiveWeatherData {
+  cityName: string;
+  province: string;
+  latitude: number;
+  longitude: number;
+  temperature: number;
+  apparentTemperature: number;
+  humidity: number;
+  weatherCode: number;
+  weatherDescription: string;
+  weatherCondition: 'sunny' | 'cool' | 'chilly' | 'rainy';
+  isDay: boolean;
+  windSpeed: number;
+  updatedAt: string;
+  isLiveGps?: boolean;
+  hourlyForecast: Array<{
+    time: string;
+    temperature: number;
+    weatherCode: number;
+  }>;
+  dailyForecast: Array<{
+    date: string;
+    tempMax: number;
+    tempMin: number;
+    weatherCode: number;
+  }>;
+  outfitRecommendation: {
+    title: string;
+    summary: string;
+    fabricAdvice: string;
+    layerAdvice: string;
+    suggestedPalettes: string[];
+    suggestedItems: string[];
+  };
+}
+
 export interface OutfitState {
   outerId?: string;
   innerId?: string;
@@ -165,3 +210,74 @@ export interface ChatMessage {
     payload?: any;
   }[];
 }
+
+// ==========================================
+// COUPLE & SQUAD COORDINATION (PHỐI ĐỒ ĐÔI & NHÓM BẠN)
+// ==========================================
+export type CoordinationMode = 'couple' | 'group';
+
+export type GroupOccasionId =
+  | 'xuan_hoi'        // Du Xuân & Trẩy Hội Đầu Năm
+  | 'co_cung_ky_yeu'  // Chụp Ảnh Cố Cung & Kỷ Yếu (Huế / Hoàng Thành)
+  | 'pho_co_dao_choi' // Dạo Phố Cổ Hội An & Phố Đi Bộ Hồ Gươm
+  | 'hy_su_cuoi'      // Dự Tiệc Cưới & Hỷ Sự Cổ Phong
+  | 'tra_chieu_nha';  // Trà Chiều Phong Vị Xưa
+
+export interface GroupOccasionInfo {
+  id: GroupOccasionId;
+  name: string;
+  vibe: string;
+  recommendedPalette: string[];
+  recommendedEra: CulturalEra[];
+  description: string;
+}
+
+export interface GroupMember {
+  id: string;
+  name: string;
+  role: string;
+  avatarType: 'female' | 'male' | 'unisex' | 'cyber';
+  outfit: OutfitState;
+}
+
+export interface GroupMatchCriteria {
+  id: string;
+  name: string;
+  score: number;
+  maxScore: number;
+  weight: string;
+  status: 'excellent' | 'good' | 'average' | 'improve';
+  comment: string;
+}
+
+export interface GroupMatchResult {
+  overallScore: number;
+  grade: 'Tuyệt Mỹ Ăn Ý' | 'Rất Hòa Hợp' | 'Khá Đồng Điệu' | 'Cần Cân Đối Lại';
+  summary: string;
+  criteria: GroupMatchCriteria[];
+  memberElements: Array<{
+    memberId: string;
+    memberName: string;
+    dominantElement: ElementType;
+    era: string;
+    outerName?: string;
+  }>;
+  elementSynergies: string[];
+  recommendations: string[];
+}
+
+export interface GroupPresetTheme {
+  id: string;
+  title: string;
+  mode: CoordinationMode;
+  occasionId: GroupOccasionId;
+  description: string;
+  tag: string;
+  members: Array<{
+    name: string;
+    role: string;
+    avatarType: 'female' | 'male' | 'unisex' | 'cyber';
+    outfit: OutfitState;
+  }>;
+}
+

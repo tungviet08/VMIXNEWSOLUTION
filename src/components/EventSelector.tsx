@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { EventModel } from '../types';
+import { EventModel, LiveWeatherData } from '../types';
 import { PRESET_EVENTS } from '../data/presetEvents';
-import { Calendar, CloudSun, Sparkles, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, CloudSun, Sparkles, Plus, X, ChevronLeft, ChevronRight, MapPin, ArrowRight } from 'lucide-react';
 
 interface EventSelectorProps {
   currentEvent: EventModel;
@@ -9,6 +9,8 @@ interface EventSelectorProps {
   onApplyPresetOutfit: (event: EventModel) => void;
   onAddCustomEvent: (event: EventModel) => void;
   theme?: 'dark' | 'light';
+  currentWeather?: LiveWeatherData | null;
+  onOpenWeatherReport?: () => void;
 }
 
 export const EventSelector: React.FC<EventSelectorProps> = ({
@@ -17,6 +19,8 @@ export const EventSelector: React.FC<EventSelectorProps> = ({
   onApplyPresetOutfit,
   onAddCustomEvent,
   theme = 'dark',
+  currentWeather,
+  onOpenWeatherReport,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customName, setCustomName] = useState('');
@@ -79,15 +83,53 @@ export const EventSelector: React.FC<EventSelectorProps> = ({
               Sự Kiện: <span className="text-[#c93b2b]">{currentEvent.name}</span>
             </h3>
           </div>
-          <div className={`flex items-center gap-2 text-xs ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>
-            <CloudSun className="w-3.5 h-3.5 text-amber-500" />
-            <span>{currentEvent.weather.label}</span>
+          <div className={`flex items-center gap-2 text-xs flex-wrap ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>
+            <div className="flex items-center gap-1.5">
+              <CloudSun className="w-3.5 h-3.5 text-amber-500" />
+              <span>{currentEvent.weather.label}</span>
+            </div>
             <span className="text-stone-300">·</span>
             <span className="italic truncate max-w-xs">{currentEvent.vibe}</span>
+
+            {/* Live Weather Indicator Chip */}
+            {currentWeather && onOpenWeatherReport && (
+              <>
+                <span className="text-stone-300">·</span>
+                <button
+                  type="button"
+                  onClick={onOpenWeatherReport}
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium transition-all cursor-pointer border ${
+                    isLight
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200'
+                      : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/20'
+                  }`}
+                  title="Nhấp để mở báo cáo thời tiết thời gian thực và xem gợi ý phục sức"
+                >
+                  <MapPin className="w-3 h-3 text-[#c93b2b]" />
+                  <span>Live: {currentWeather.cityName} ({currentWeather.temperature}°C)</span>
+                  <ArrowRight className="w-2.5 h-2.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+          {onOpenWeatherReport && (
+            <button
+              onClick={onOpenWeatherReport}
+              className={`px-3 py-1.5 border rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                isLight
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200'
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/20'
+              }`}
+              title="Mở bảng báo cáo thời tiết chi tiết theo thời gian thực"
+            >
+              <CloudSun className="w-3.5 h-3.5 text-amber-500" />
+              <span>Báo Cáo Thời Tiết Live</span>
+            </button>
+          )}
+
           <button
             onClick={() => onApplyPresetOutfit(currentEvent)}
             className={`flex-1 sm:flex-none px-3 py-1.5 border rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${

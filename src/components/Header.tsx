@@ -1,10 +1,10 @@
 import React from 'react';
-import { Sparkles, Bookmark, Users, Sun, Moon } from 'lucide-react';
-import { UserProfile } from '../types';
+import { Sparkles, Bookmark, Users, Sun, Moon, CloudSun, UserCheck, Heart } from 'lucide-react';
+import { UserProfile, LiveWeatherData } from '../types';
 
 interface HeaderProps {
-  activeTab: 'styling' | 'wardrobe' | 'community' | 'comparison';
-  setActiveTab: (tab: 'styling' | 'wardrobe' | 'community' | 'comparison') => void;
+  activeTab: 'styling' | 'wardrobe' | 'community' | 'comparison' | 'group';
+  setActiveTab: (tab: 'styling' | 'wardrobe' | 'community' | 'comparison' | 'group') => void;
   currentUser: UserProfile;
   lookbookCount: number;
   theme: 'dark' | 'light';
@@ -12,6 +12,8 @@ interface HeaderProps {
   onOpenAi: () => void;
   onOpenSaveLookbook: () => void;
   onOpenProfile: () => void;
+  onOpenWeather?: () => void;
+  currentWeather?: LiveWeatherData | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,6 +26,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAi,
   onOpenSaveLookbook,
   onOpenProfile,
+  onOpenWeather,
+  currentWeather,
 }) => {
   const isLight = theme === 'light';
 
@@ -100,6 +104,21 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Sàn Diễn Cộng Đồng</span>
           </button>
           <button
+            onClick={() => setActiveTab('group')}
+            className={`px-3 py-1.5 text-xs lg:text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'group'
+                ? isLight
+                  ? 'bg-[#c93b2b] text-white font-semibold shadow-xs'
+                  : 'bg-[#c93b2b] text-white font-semibold shadow-sm'
+                : isLight
+                ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Heart className="w-3.5 h-3.5 text-rose-500" />
+            <span>Phối Đồ Đôi & Nhóm</span>
+          </button>
+          <button
             onClick={() => setActiveTab('comparison')}
             className={`px-3 py-1.5 text-xs lg:text-sm font-medium rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'comparison'
@@ -138,6 +157,29 @@ export const Header: React.FC<HeaderProps> = ({
               <Sun className="w-4 h-4 text-amber-300" />
             )}
           </button>
+
+          {/* Live Weather Button */}
+          {onOpenWeather && (
+            <button
+              onClick={onOpenWeather}
+              className={`px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap ${
+                isLight
+                  ? 'bg-[#f6f2ea] hover:bg-[#ece4d3] text-stone-800 border-[#ded6c5] shadow-2xs'
+                  : 'bg-white/5 hover:bg-white/10 text-zinc-200 border-white/10'
+              }`}
+              title="Báo cáo thời tiết thời gian thực & Cố vấn phối đồ"
+            >
+              <CloudSun className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+              <span className="hidden sm:inline">
+                {currentWeather
+                  ? `${currentWeather.temperature}°C · ${currentWeather.cityName}`
+                  : 'Thời Tiết Live'}
+              </span>
+              <span className="sm:hidden">
+                {currentWeather ? `${currentWeather.temperature}°C` : 'Thời Tiết'}
+              </span>
+            </button>
+          )}
 
           <button
             onClick={onOpenSaveLookbook}
@@ -235,6 +277,21 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Users className="w-3 h-3 text-[#c93b2b]" />
           <span>Sàn Diễn Cộng Đồng</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('group')}
+          className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+            activeTab === 'group'
+              ? isLight
+                ? 'bg-[#c93b2b] text-white font-semibold'
+                : 'bg-[#c93b2b] text-white font-semibold'
+              : isLight
+              ? 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              : 'text-zinc-400 hover:text-white hover:bg-white/5'
+          }`}
+        >
+          <Heart className="w-3 h-3 text-rose-500" />
+          <span>Phối Đồ Đôi & Nhóm</span>
         </button>
         <button
           onClick={() => setActiveTab('comparison')}

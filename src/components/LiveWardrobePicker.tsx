@@ -15,7 +15,9 @@ import {
   ChevronLeft, 
   ChevronRight,
   Palette,
-  Compass
+  Compass,
+  Undo2,
+  Redo2
 } from 'lucide-react';
 
 interface LiveWardrobePickerProps {
@@ -28,6 +30,12 @@ interface LiveWardrobePickerProps {
   theme?: 'dark' | 'light';
   harmony: ColorHarmonyResult;
   onSwitchToColorTab?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  avatarType?: 'female' | 'male' | 'unisex' | 'cyber';
+  setAvatarType?: (type: 'female' | 'male' | 'unisex' | 'cyber') => void;
 }
 
 export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
@@ -40,11 +48,18 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
   theme = 'dark',
   harmony,
   onSwitchToColorTab,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  avatarType = 'female',
+  setAvatarType,
 }) => {
   const isLight = theme === 'light';
   const [selectedCategory, setSelectedCategory] = useState<GarmentCategory>('outer');
   const [searchQuery, setSearchQuery] = useState('');
   const [eraFilter, setEraFilter] = useState<string>('all');
+  const [genderFilter, setGenderFilter] = useState<'all' | 'female' | 'male' | 'unisex'>('all');
   const [colorPickerItemId, setColorPickerItemId] = useState<string | null>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
 
@@ -78,12 +93,31 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
   // Filter items in current category
   const categoryItems = wardrobe.filter((item) => {
     if (item.category !== selectedCategory) return false;
+
+    // 1. Gender filter
+    if (genderFilter === 'female') {
+      if (item.genderContext && item.genderContext !== 'female' && item.genderContext !== 'unisex') {
+        return false;
+      }
+    } else if (genderFilter === 'male') {
+      if (item.genderContext && item.genderContext !== 'male' && item.genderContext !== 'unisex') {
+        return false;
+      }
+    } else if (genderFilter === 'unisex') {
+      if (item.genderContext !== 'unisex') {
+        return false;
+      }
+    }
+
+    // 2. Era filter
     if (eraFilter !== 'all') {
       if (eraFilter === 'traditional' && !item.isTraditional) return false;
       if (eraFilter === 'remix' && item.isTraditional) return false;
       if (eraFilter === 'nguyen' && !item.era.includes('Nguyễn')) return false;
       if (eraFilter === 'le_ly' && !item.era.includes('Lê') && !item.era.includes('Lý')) return false;
     }
+
+    // 3. Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = item.name.toLowerCase().includes(q);
@@ -113,21 +147,59 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
           </h3>
         </div>
 
-        {onSwitchToColorTab && (
-          <button
-            onClick={onSwitchToColorTab}
-            className={`px-2.5 py-1 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
-              isLight
-                ? 'bg-white hover:bg-stone-50 border-[#ded6c5] text-stone-700 shadow-xs'
-                : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300'
-            }`}
-            title="Chuyển sang bảng chỉnh màu và chấm điểm ngũ hành"
-          >
-            <Compass className="w-3.5 h-3.5 text-[#c93b2b]" />
-            <span className="tabular-nums font-mono">Hòa sắc {harmony.score}/100</span>
-            <ChevronRight className="w-3 h-3 text-stone-400" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Quick Undo / Redo */}
+          {onUndo && (
+            <div className="flex items-center gap-1 mr-0.5">
+              <button
+                onClick={onUndo}
+                disabled={!canUndo}
+                className={`p-1.5 rounded-lg border transition-all ${
+                  !canUndo
+                    ? 'opacity-30 cursor-not-allowed border-transparent'
+                    : isLight
+                    ? 'bg-white hover:bg-stone-100 border-stone-200 text-stone-700 hover:text-[#c93b2b] shadow-2xs cursor-pointer hover:scale-105 active:scale-95'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:text-white cursor-pointer hover:scale-105 active:scale-95'
+                }`}
+                title={canUndo ? 'Hoàn tác trang phục trước (Ctrl+Z)' : 'Chưa có thao tác để hoàn tác'}
+                aria-label="Undo"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={onRedo}
+                disabled={!canRedo}
+                className={`p-1.5 rounded-lg border transition-all ${
+                  !canRedo
+                    ? 'opacity-30 cursor-not-allowed border-transparent'
+                    : isLight
+                    ? 'bg-white hover:bg-stone-100 border-stone-200 text-stone-700 hover:text-[#c93b2b] shadow-2xs cursor-pointer hover:scale-105 active:scale-95'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:text-white cursor-pointer hover:scale-105 active:scale-95'
+                }`}
+                title={canRedo ? 'Làm lại trang phục (Ctrl+Y / Ctrl+Shift+Z)' : 'Không có thao tác để làm lại'}
+                aria-label="Redo"
+              >
+                <Redo2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {onSwitchToColorTab && (
+            <button
+              onClick={onSwitchToColorTab}
+              className={`px-2.5 py-1 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                isLight
+                  ? 'bg-white hover:bg-stone-50 border-[#ded6c5] text-stone-700 shadow-xs hover:border-amber-700/30'
+                  : 'bg-white/5 hover:bg-white/10 border-white/10 text-zinc-300 hover:border-white/20'
+              }`}
+              title="Chuyển sang bảng chỉnh màu và chấm điểm ngũ hành"
+            >
+              <Compass className="w-3.5 h-3.5 text-[#c93b2b]" />
+              <span className="tabular-nums font-mono">Hòa sắc {harmony.score}/100</span>
+              <ChevronRight className="w-3 h-3 text-stone-400" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 2. Horizontal Category Tabs with Scroll Controls */}
@@ -166,10 +238,10 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
           </div>
         </div>
 
-        {/* Scrollable ribbon of categories */}
+        {/* Scrollable ribbon of categories with subtle hover scaling and brightening */}
         <div
           ref={categoryScrollRef}
-          className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin scroll-smooth"
+          className="flex items-center gap-2 overflow-x-auto py-1 px-0.5 scrollbar-thin scroll-smooth"
         >
           {categories.map((cat) => {
             const Icon = cat.icon;
@@ -185,30 +257,32 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
                   setSelectedCategory(cat.id);
                   setColorPickerItemId(null);
                 }}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer border ${
+                className={`group relative px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all duration-200 ease-out cursor-pointer border transform hover:scale-[1.04] active:scale-95 ${
                   isSelected
-                    ? 'bg-[#c93b2b] text-white border-[#c93b2b] shadow-sm'
+                    ? 'bg-[#c93b2b] text-white border-[#c93b2b] shadow-md shadow-[#c93b2b]/25 hover:brightness-110 hover:shadow-lg hover:shadow-[#c93b2b]/35'
                     : isLight
-                    ? 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200'
-                    : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-white/5'
+                    ? 'bg-white hover:bg-white text-stone-700 hover:text-[#c93b2b] border-stone-200 hover:border-amber-700/35 hover:shadow-md hover:brightness-105'
+                    : 'bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border-white/5 hover:border-white/20 hover:brightness-115 hover:shadow-[0_0_14px_rgba(255,255,255,0.08)]'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{cat.label}</span>
+                <Icon className={`w-3.5 h-3.5 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-translate-y-0.5 ${
+                  isSelected ? 'text-white' : 'text-stone-500 group-hover:text-[#c93b2b] dark:text-zinc-400 dark:group-hover:text-amber-400'
+                }`} />
+                <span className="tracking-tight">{cat.label}</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full transition-colors duration-200 ${
                     isSelected
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-white/25 text-white'
                       : isLight
-                      ? 'bg-stone-200 text-stone-600'
-                      : 'bg-white/10 text-zinc-400'
+                      ? 'bg-stone-200/90 text-stone-700 group-hover:bg-amber-100 group-hover:text-amber-900'
+                      : 'bg-white/10 text-zinc-400 group-hover:bg-white/20 group-hover:text-zinc-200'
                   }`}
                 >
                   {count}
                 </span>
                 {isEquipped && (
                   <span
-                    className="w-2 h-2 rounded-full border border-white/50 shadow-xs shrink-0"
+                    className="w-2 h-2 rounded-full border border-white/60 shadow-xs shrink-0 group-hover:scale-125 transition-transform duration-200"
                     style={{ backgroundColor: equippedColor }}
                     title="Đang mặc món trong nhóm này"
                   />
@@ -248,7 +322,7 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
 
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none pb-0.5">
           {[
-            { id: 'all', label: 'Tất cả' },
+            { id: 'all', label: 'Tất cả niên đại' },
             { id: 'traditional', label: 'Cổ phục' },
             { id: 'remix', label: 'Remix' },
             { id: 'nguyen', label: 'Triều Nguyễn' },
@@ -257,20 +331,77 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
             <button
               key={era.id}
               onClick={() => setEraFilter(era.id)}
-              className={`px-2 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-colors cursor-pointer border ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-medium whitespace-nowrap transition-all duration-200 ease-out cursor-pointer border transform hover:scale-105 active:scale-95 ${
                 eraFilter === era.id
                   ? isLight
-                    ? 'bg-stone-800 text-white border-stone-800'
-                    : 'bg-white text-stone-900 border-white'
+                    ? 'bg-stone-800 text-white border-stone-800 shadow-2xs'
+                    : 'bg-white text-stone-900 border-white shadow-2xs'
                   : isLight
-                  ? 'bg-stone-100 hover:bg-stone-200 text-stone-600 border-stone-200'
-                  : 'bg-white/5 hover:bg-white/10 text-zinc-400 border-white/5'
+                  ? 'bg-stone-100 hover:bg-stone-200/80 hover:text-stone-900 text-stone-600 border-stone-200 hover:border-stone-300 hover:shadow-2xs'
+                  : 'bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white border-white/5 hover:border-white/10'
               }`}
             >
               {era.label}
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 3.5 Gender Filter Ribbon & Model Sync */}
+      <div className={`px-3 py-1.5 border-b flex flex-wrap items-center justify-between gap-2 text-xs transition-colors ${
+        isLight ? 'bg-amber-50/30 border-stone-200' : 'bg-white/[0.01] border-white/5'
+      }`}>
+        <div className="flex items-center gap-1.5">
+          <span className={`text-[11px] font-semibold uppercase tracking-wider ${isLight ? 'text-stone-500' : 'text-zinc-400'}`}>
+            Lọc Giới Tính:
+          </span>
+          <div className="flex items-center gap-1">
+            {[
+              { id: 'all', label: 'Tất Cả' },
+              { id: 'female', label: '👩 Đồ Nữ' },
+              { id: 'male', label: '👨 Đồ Nam' },
+              { id: 'unisex', label: '✨ Unisex' },
+            ].map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setGenderFilter(g.id as any)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium transition-all cursor-pointer border ${
+                  genderFilter === g.id
+                    ? 'bg-[#c93b2b] text-white border-[#c93b2b] shadow-xs'
+                    : isLight
+                    ? 'bg-white hover:bg-stone-100 text-stone-700 border-stone-200'
+                    : 'bg-white/5 hover:bg-white/10 text-zinc-300 border-white/10'
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Model quick indicator & sync */}
+        {setAvatarType && (
+          <div className="flex items-center gap-1 text-[11px]">
+            <span className={isLight ? 'text-stone-500' : 'text-zinc-400'}>Model:</span>
+            <button
+              onClick={() => {
+                const nextGender = avatarType === 'female' ? 'male' : 'female';
+                setAvatarType(nextGender);
+                setGenderFilter(nextGender);
+              }}
+              className={`px-2 py-0.5 rounded-md border font-semibold transition-all cursor-pointer ${
+                avatarType === 'female'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30'
+                  : avatarType === 'male'
+                  ? 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30'
+                  : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200'
+              }`}
+              title="Bấm để đổi nhanh giới tính Model (Nữ ⇄ Nam) và đồng bộ trang phục"
+            >
+              {avatarType === 'female' ? '👩 Nữ (Đổi sang Nam)' : avatarType === 'male' ? '👨 Nam (Đổi sang Nữ)' : '⚡ Gen Z'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 4. Garment Items Grid (Direct Real-time Selection) */}
@@ -293,14 +424,14 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
                     onEquipItem(item);
                   }
                 }}
-                className={`rounded-xl border p-3 transition-all duration-200 flex flex-col gap-2.5 cursor-pointer relative group ${
+                className={`rounded-xl border p-3 transition-all duration-200 ease-out flex flex-col gap-2.5 cursor-pointer relative group transform hover:-translate-y-0.5 hover:scale-[1.01] ${
                   isEquipped
                     ? isLight
-                      ? 'bg-amber-50/50 border-[#c93b2b] ring-1 ring-[#c93b2b] shadow-sm'
-                      : 'bg-[#c93b2b]/10 border-[#c93b2b] ring-1 ring-[#c93b2b]'
+                      ? 'bg-amber-50/60 border-[#c93b2b] ring-1 ring-[#c93b2b] shadow-sm hover:shadow-md'
+                      : 'bg-[#c93b2b]/10 border-[#c93b2b] ring-1 ring-[#c93b2b] hover:shadow-md'
                     : isLight
-                    ? 'bg-[#fbf9f4] hover:bg-white hover:border-stone-300 border-[#e7e1d5] shadow-2xs'
-                    : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/5 hover:border-white/15'
+                    ? 'bg-[#fbf9f4] hover:bg-white hover:border-amber-700/30 border-[#e7e1d5] shadow-2xs hover:shadow-md hover:brightness-[1.01]'
+                    : 'bg-white/[0.03] hover:bg-white/[0.07] border-white/5 hover:border-white/20 hover:brightness-110 hover:shadow-lg hover:shadow-black/20'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2.5">
@@ -334,12 +465,27 @@ export const LiveWardrobePicker: React.FC<LiveWardrobePickerProps> = ({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] flex-wrap">
                         <span className={`px-1.5 py-0.2 rounded border ${
                           isLight ? 'bg-white border-stone-200 text-stone-600' : 'bg-white/10 border-white/5 text-zinc-300'
                         }`}>
                           {item.era}
                         </span>
+                        {item.genderContext === 'female' && (
+                          <span className="px-1.5 py-0.2 rounded font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                            👩 Nữ
+                          </span>
+                        )}
+                        {item.genderContext === 'male' && (
+                          <span className="px-1.5 py-0.2 rounded font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                            👨 Nam
+                          </span>
+                        )}
+                        {item.genderContext === 'unisex' && (
+                          <span className="px-1.5 py-0.2 rounded font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                            ✨ Unisex
+                          </span>
+                        )}
                         {item.isTraditional ? (
                           <span className="text-amber-600 dark:text-amber-400 font-medium">★ Cổ phục</span>
                         ) : (
